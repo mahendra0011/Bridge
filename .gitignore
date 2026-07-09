@@ -1,0 +1,6 @@
+node_modules/
+.playwright-mcp/
+console.log
+requests.log
+temp-commits/
+*.log
