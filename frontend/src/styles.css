@@ -117,3 +117,21 @@
 }
 .animate-fade-in { animation: fade-in 0.2s ease; }
 .animate-scale-in { animation: scale-in 0.2s ease; }
+
+/* Emoji Picker custom styles */
+.epr-emoji-picker {
+  --epr-emoji-size: 24px;
+  --epr-category-label-font-size: 12px;
+  --epr-search-input-bg-color: transparent;
+}
+.dark .epr-emoji-picker {
+  --epr-bg-color: var(--card);
+  --epr-category-label-bg-color: var(--surface);
+  --epr-search-input-bg-color: var(--surface);
+  --epr-picker-border-color: var(--border);
+}
+.dark .epr-emoji-picker,
+.epr-emoji-picker-dark {
+  --epr-picker-bg: var(--card);
+  --epr-picker-border: var(--border);
+}

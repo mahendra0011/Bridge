@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
 const { model: AdminRole, PERMISSIONS } = require('../models/AdminRole')
+const TokenBlacklist = require('../models/TokenBlacklist')
 
 exports.protect = async (req, res, next) => {
   try {
@@ -15,6 +16,11 @@ exports.protect = async (req, res, next) => {
     }
 
     if (!token) return res.status(401).json({ message: 'Not authenticated' })
+    
+    // Check if token is blacklisted
+    const isBlacklisted = await TokenBlacklist.findOne({ token })
+    if (isBlacklisted) return res.status(401).json({ message: 'Token has been invalidated' })
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = await User.findById(decoded.id).select('-password').populate('adminRoleId')
     if (!req.user) return res.status(401).json({ message: 'User not found' })

@@ -11,15 +11,18 @@
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed": "node src/scripts/seed.js",
     "seed:full": "node src/scripts/seed.js",
-    "check-alerts": "node src/scripts/checkSavedSearchAlerts.js"
+    "check-alerts": "node src/scripts/checkSavedSearchAlerts.js",
+    "security-audit": "npm audit --audit-level=high",
+    "lint": "node --check src/**/*.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cloudinary": "^1.21.0",
+    "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.4.1",
     "express-validator": "^7.2.0",
     "helmet": "^8.0.0",
@@ -29,7 +32,8 @@
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.6.0",
     "pdfkit": "^0.19.1",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

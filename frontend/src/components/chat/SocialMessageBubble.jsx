@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import { Check, CheckCheck, Smile, CornerDownLeft, Copy, Pin, Edit3, Trash2, FileText, ExternalLink } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Check, CheckCheck, Smile, CornerDownLeft, Copy, Pin, Edit3, Trash2, FileText, ExternalLink, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import EmojiPicker from 'emoji-picker-react'
 
-const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '👏']
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '👏', '🙏']
 
 export function SocialMessageBubble({
   message,
@@ -15,8 +16,14 @@ export function SocialMessageBubble({
   onPin,
 }) {
   const [showActions, setShowActions] = useState(false)
+  const [showQuickReactions, setShowQuickReactions] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showFileEmojiPickers, setShowFileEmojiPickers] = useState({})
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(message.text || '')
+  const quickReactionsRef = useRef(null)
+  const emojiPickerRef = useRef(null)
+  const fileEmojiPickerRefs = useRef({})
 
   const handleCopy = () => {
     if (message.text) {
@@ -31,9 +38,49 @@ export function SocialMessageBubble({
     setIsEditing(false)
   }
 
-  // Determine read receipt status
+  const handleEmojiClick = (emojiData) => {
+    onReact?.(message._id, emojiData.emoji)
+    setShowEmojiPicker(false)
+    setShowQuickReactions(false)
+  }
+
+  const handleQuickEmojiClick = (emoji) => {
+    onReact?.(message._id, emoji)
+  }
+
+  const handleFileEmojiClick = (emojiData, attIdx) => {
+    onReact?.(message._id, emojiData.emoji)
+    setShowFileEmojiPickers(prev => ({ ...prev, [attIdx]: false }))
+  }
+
+  const toggleFileEmojiPicker = (attIdx) => {
+    setShowFileEmojiPickers(prev => ({ ...prev, [attIdx]: !prev[attIdx] }))
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (quickReactionsRef.current && !quickReactionsRef.current.contains(e.target)) {
+        setShowQuickReactions(false)
+        setShowEmojiPicker(false)
+      }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
+        setShowEmojiPicker(false)
+      }
+      Object.keys(showFileEmojiPickers).forEach(key => {
+        if (showFileEmojiPickers[key]) {
+          const ref = fileEmojiPickerRefs.current[key]
+          if (ref && !ref.contains(e.target)) {
+            setShowFileEmojiPickers(prev => ({ ...prev, [key]: false }))
+          }
+        }
+      })
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFileEmojiPickers])
+
   const hasBeenRead = (message.readBy && message.readBy.length > 0) || message.read
-  const isDelivered = true // All persisted messages are delivered
+  const isDelivered = true
 
   const formatTime = (ts) => {
     if (!ts) return ''
@@ -41,7 +88,6 @@ export function SocialMessageBubble({
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  // Helper to detect image attachments
   const isImageAttachment = (att) => {
     if (!att?.url) return false
     const url = att.url.toLowerCase()
@@ -54,7 +100,6 @@ export function SocialMessageBubble({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      {/* Pinned label above bubble if pinned */}
       {message.isPinned && (
         <div className="flex items-center gap-1 text-[11px] font-medium text-amber-600 mb-0.5 px-1">
           <Pin className="size-3 fill-amber-500 text-amber-600" />
@@ -62,24 +107,52 @@ export function SocialMessageBubble({
         </div>
       )}
 
-      {/* Hover action toolbar */}
       {showActions && !message.isDeleted && (
         <div
-          className={`absolute -top-7 z-10 flex items-center gap-1 rounded-full bg-slate-800/90 px-2 py-1 text-white shadow-lg backdrop-blur-sm transition-opacity ${
+          className={`absolute -top-8 z-20 flex items-center gap-0.5 rounded-full bg-slate-800/90 px-1.5 py-1 text-white shadow-lg backdrop-blur-sm transition-opacity ${
             isMe ? 'right-0' : 'left-0'
           }`}
         >
-          {QUICK_EMOJIS.map((emoji) => (
+          <div className="relative" ref={quickReactionsRef}>
             <button
-              key={emoji}
-              onClick={() => onReact?.(message._id, emoji)}
-              className="hover:scale-125 transition-transform text-xs px-0.5"
-              title={`React ${emoji}`}
+              onClick={() => setShowQuickReactions(!showQuickReactions)}
+              className="p-0.5 hover:text-primary transition-colors"
+              title="React"
             >
-              {emoji}
+              <Smile className="size-4" />
             </button>
-          ))}
-          <div className="h-3 w-px bg-white/20 mx-0.5" />
+            {showQuickReactions && (
+              <div className={`absolute top-full mt-2 ${isMe ? 'right-0' : 'left-0'} z-30 bg-slate-800/95 rounded-full px-1.5 py-1 flex items-center gap-0.5`}>
+                {QUICK_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleQuickEmojiClick(emoji)}
+                    className="hover:scale-125 transition-transform text-2xl px-1"
+                    title={`React ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setShowEmojiPicker(true)}
+                  className="p-0.5 hover:text-primary transition-colors"
+                  title="More reactions"
+                >
+                  <Plus className="size-3" />
+                </button>
+              </div>
+            )}
+            {showEmojiPicker && (
+              <div className={`absolute top-full mt-2 ${isMe ? 'right-0' : 'left-0'} z-30`}>
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  width={300}
+                  height={350}
+                  previewConfig={{ showPreview: false }}
+                />
+              </div>
+            )}
+          </div>
           <button
             onClick={() => onReply?.(message)}
             className="p-1 hover:text-primary transition-colors"
@@ -122,7 +195,6 @@ export function SocialMessageBubble({
         </div>
       )}
 
-      {/* Quoted Reply block if this message replied to someone */}
       {message.replyTo && message.replyTo.text && (
         <div
           className={`mb-1 max-w-xs rounded-lg border-l-4 border-primary bg-slate-100/80 px-3 py-1.5 text-xs text-slate-600 ${
@@ -134,7 +206,6 @@ export function SocialMessageBubble({
         </div>
       )}
 
-      {/* Main Message Bubble */}
       <div
         className={`relative max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-all ${
           message.isDeleted
@@ -171,14 +242,12 @@ export function SocialMessageBubble({
           </div>
         ) : (
           <>
-            {/* Text content */}
             {message.text && (
               <p className="whitespace-pre-wrap break-words leading-relaxed">
                 {message.text}
               </p>
             )}
 
-            {/* Attachments rendering */}
             {message.attachments?.length > 0 && !message.isDeleted && (
               <div className="mt-2 flex flex-col gap-2">
                 {message.attachments.map((att, idx) => {
@@ -200,21 +269,44 @@ export function SocialMessageBubble({
                     )
                   }
                   return (
-                    <a
-                      key={idx}
-                      href={att.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`flex items-center gap-2 rounded-xl p-2.5 text-xs font-medium transition-colors ${
-                        isMe
-                          ? 'bg-white/15 text-white hover:bg-white/25'
-                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-                      }`}
-                    >
-                      <FileText className="size-4 shrink-0" />
-                      <span className="truncate flex-1">{att.name || 'Document'}</span>
-                      <ExternalLink className="size-3.5 shrink-0 opacity-70" />
-                    </a>
+                    <div key={idx} className="flex items-center gap-2">
+                      <a
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`flex items-center gap-2 rounded-xl p-2.5 text-xs font-medium transition-colors flex-1 ${
+                          isMe
+                            ? 'bg-white/15 text-white hover:bg-white/25'
+                            : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                      >
+                        <FileText className="size-4 shrink-0" />
+                        <span className="truncate flex-1">{att.name || 'Document'}</span>
+                        <ExternalLink className="size-3.5 shrink-0 opacity-70" />
+                      </a>
+                      <div
+                        className="relative"
+                        ref={el => fileEmojiPickerRefs.current[idx] = el}
+                      >
+                        <button
+                          onClick={() => toggleFileEmojiPicker(idx)}
+                          className="p-1 hover:bg-slate-200 rounded"
+                          title="Add reaction to file"
+                        >
+                          <Smile className="size-4 text-slate-500" />
+                        </button>
+                        {showFileEmojiPickers[idx] && (
+                          <div className={`absolute top-full mt-2 ${isMe ? 'right-0' : 'left-0'} z-30`}>
+                            <EmojiPicker
+                              onEmojiClick={(emoji) => handleFileEmojiClick(emoji, idx)}
+                              width={280}
+                              height={320}
+                              previewConfig={{ showPreview: false }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )
                 })}
               </div>
@@ -222,7 +314,6 @@ export function SocialMessageBubble({
           </>
         )}
 
-        {/* Footer info: time, edited label, and read receipt ticks */}
         <div
           className={`mt-1 flex items-center justify-end gap-1.5 text-[10px] ${
             isMe ? 'text-white/80' : 'text-slate-400'
@@ -231,7 +322,6 @@ export function SocialMessageBubble({
           {message.isEdited && !message.isDeleted && <span>(edited)</span>}
           <span>{formatTime(message.createdAt)}</span>
 
-          {/* Social Media Read Receipt Ticks (Only for Sent messages) */}
           {isMe && !message.isDeleted && (
             <span className="inline-flex items-center" title={hasBeenRead ? 'Read' : 'Delivered'}>
               {hasBeenRead ? (
@@ -246,10 +336,9 @@ export function SocialMessageBubble({
         </div>
       </div>
 
-      {/* Reactions pill row */}
       {message.reactions?.length > 0 && (
         <div
-          className={`mt-1 flex flex-wrap gap-1 ${
+          className={`mt-1 flex flex-wrap gap-1.5 ${
             isMe ? 'justify-end' : 'justify-start'
           }`}
         >
@@ -257,10 +346,10 @@ export function SocialMessageBubble({
             <span
               key={idx}
               onClick={() => onReact?.(message._id, r.emoji)}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs shadow-xs cursor-pointer hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm shadow-xs cursor-pointer hover:bg-slate-50 transition-colors"
               title={`Reacted by ${r.user?.name || 'User'}`}
             >
-              <span>{r.emoji}</span>
+              <span className="text-base">{r.emoji}</span>
             </span>
           ))}
         </div>

@@ -9,6 +9,7 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useSocket } from '@/hooks/useSocket'
+import EmojiPicker from 'emoji-picker-react'
 import { SocialMessageBubble } from '@/components/chat/SocialMessageBubble'
 import { SocialChatHeader } from '@/components/chat/SocialChatHeader'
 
@@ -39,6 +40,8 @@ export default function AgencyMessages() {
   const [hasMore, setHasMore] = useState(false)
   const [typingUsers, setTypingUsers] = useState(new Set())
   const [replyToMessage, setReplyToMessage] = useState(null)
+  const [showTextEmojiPicker, setShowTextEmojiPicker] = useState(false)
+  const textEmojiPickerRef = useRef(null)
   const activeIdRef = useRef(null)
   const messagesEndRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -134,9 +137,19 @@ useEffect(() => {
      activeIdRef.current = activeChat?._id || null
    }, [activeChat])
 
-   useEffect(() => {
-     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-   }, [messages])
+useEffect(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
+
+    useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (textEmojiPickerRef.current && !textEmojiPickerRef.current.contains(e.target)) {
+          setShowTextEmojiPicker(false)
+        }
+      }
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
   const loadMessages = async (chatId) => {
     setPage(1)
@@ -378,10 +391,29 @@ useEffect(() => {
             <div className="border-t border-slate-200 bg-white p-4">
               <div className="flex items-center gap-2">
                 <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Paperclip className="size-5" /></button>
-                <input value={newMessage} onChange={e => { setNewMessage(e.target.value); handleTyping() }}
-                  placeholder="Type a message or paste emojis..."
-                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} />
+                <div className="relative flex-1" ref={textEmojiPickerRef}>
+                  <input value={newMessage} onChange={e => { setNewMessage(e.target.value); handleTyping() }}
+                    placeholder="Type a message..."
+                    className="w-full rounded-xl border border-slate-200 px-10 py-2.5 text-sm outline-none focus:border-primary"
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} />
+                  <button
+                    onClick={() => setShowTextEmojiPicker(!showTextEmojiPicker)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary"
+                    title="Insert emoji"
+                  >
+                    <Smile className="size-4" />
+                  </button>
+                  {showTextEmojiPicker && (
+                    <div className="absolute bottom-full left-0 mb-2 z-50">
+                      <EmojiPicker
+                        onEmojiClick={(emoji) => { setNewMessage(newMessage + emoji.emoji); setShowTextEmojiPicker(false) }}
+                        width={280}
+                        height={320}
+                        previewConfig={{ showPreview: false }}
+                      />
+                    </div>
+                  )}
+                </div>
                 <button onClick={handleSend} disabled={!newMessage.trim() || sending}
                   className="rounded-xl bg-primary p-2.5 text-white hover:bg-primary/90 disabled:opacity-60">
                   <Send className="size-5" />

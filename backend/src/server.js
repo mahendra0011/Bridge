@@ -38,6 +38,8 @@ const mongoose = require('mongoose')
 const rateLimit = require('express-rate-limit')
 const passport = require('passport')
 const cookieParser = require('cookie-parser')
+const mongoSanitize = require('express-mongo-sanitize')
+const { csrfProtection } = require('./middleware/csrf')
 require('./utils/passport') // Google OAuth strategy
 const { resolveMongoUri } = require('./utils/mongoConnection')
 
@@ -63,17 +65,51 @@ const ALLOWED_ORIGIN = rawOrigin
 
 const isProduction = process.env.NODE_ENV === 'production'
 
+// HTTPS redirect in production
+if (isProduction) {
+  app.enable('trust proxy')
+  app.use((req, res, next) => {
+    if (req.secure) return next()
+    res.redirect(`https://${req.headers.host}${req.url}`)
+  })
+}
+
 const io = new Server(server, {
   cors: { origin: ALLOWED_ORIGIN, credentials: true }
 })
 
 // Security headers — must come before routes
 app.use(helmet({
-  contentSecurityPolicy: isProduction ? undefined : false,
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  } : false,
   crossOriginEmbedderPolicy: false,
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }))
+// HSTS - enforce HTTPS
+if (isProduction) {
+  app.use((req, res, next) => {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+    res.setHeader('X-Frame-Options', 'DENY')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    next()
+  })
+}
 app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }))
 app.use(express.json())
+app.use(mongoSanitize()) // NoSQL injection prevention
 app.use(cookieParser())
 // Serve uploaded files. Use an absolute path so the server works correctly
 // no matter which directory `node` is invoked from.
@@ -93,19 +129,19 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
 
 // Routes
 app.use('/api/auth',        require('./routes/auth'))
-app.use('/api/student',     require('./routes/student'))
-app.use('/api/company/candidates', require('./routes/candidates'))
-app.use('/api/company',     require('./routes/company'))
-app.use('/api/internships', require('./routes/internships'))
-app.use('/api/jobs',        require('./routes/jobs'))
-app.use('/api/admin',       require('./routes/admin'))
-app.use('/api/search',      require('./routes/search'))
-app.use('/api/agency',       require('./routes/agency'))
-app.use('/api/contact',      require('./routes/contact'))
-app.use('/api/opportunities', require('./routes/opportunities'))
-app.use('/api/person',       require('./routes/person'))
-app.use('/api/community',    require('./routes/community'))
-app.use('/api/reports',      require('./routes/reports'))
+app.use('/api/student',     csrfProtection, require('./routes/student'))
+app.use('/api/company/candidates', csrfProtection, require('./routes/candidates'))
+app.use('/api/company',     csrfProtection, require('./routes/company'))
+app.use('/api/internships', csrfProtection, require('./routes/internships'))
+app.use('/api/jobs',        csrfProtection, require('./routes/jobs'))
+app.use('/api/admin',       csrfProtection, require('./routes/admin'))
+app.use('/api/search',      csrfProtection, require('./routes/search'))
+app.use('/api/agency',       csrfProtection, require('./routes/agency'))
+app.use('/api/opportunities', csrfProtection, require('./routes/opportunities'))
+app.use('/api/person',       csrfProtection, require('./routes/person'))
+app.use('/api/community',    csrfProtection, require('./routes/community'))
+app.use('/api/reports',      csrfProtection, require('./routes/reports'))
+app.use('/api/contact',      require('./routes/contact')) // Public endpoint, no CSRF needed
 
 // Socket.io
 require('./utils/socket')(io)

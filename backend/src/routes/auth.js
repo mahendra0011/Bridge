@@ -5,11 +5,14 @@ const User = require('../models/User')
 const StudentProfile = require('../models/StudentProfile')
 const Company = require('../models/Company')
 const Agency = require('../models/Agency')
-const { signToken, setTokenCookie, clearTokenCookie } = require('../utils/jwt')
+const { signToken, signRefreshToken, verifyRefreshToken, setTokenCookie, setRefreshTokenCookie, clearTokenCookie } = require('../utils/jwt')
 const { sendEmail, resetEmail, otpEmail } = require('../utils/email')
 const { protect } = require('../middleware/auth')
 const { validate } = require('../middleware/validate')
 const { loginLimiter, signupLimiter, forgotPasswordLimiter } = require('../middleware/rateLimit')
+const zxcvbn = require('zxcvbn')
+const jwt = require('jsonwebtoken')
+const TokenBlacklist = require('../models/TokenBlacklist')
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -23,26 +26,31 @@ function hashOtp(otp) {
   return crypto.createHash('sha256').update(otp).digest('hex')
 }
 
+/** Password strength validation using zxcvbn */
+function validatePasswordStrength(value) {
+  const result = zxcvbn(value)
+  if (result.score < 3) {
+    throw new Error('Password is too weak. ' + result.feedback.suggestions?.[0] || 'Use a stronger password.')
+  }
+  return true
+}
+
 // ─── Validators ─────────────────────────────────────────────────────────────
 
 const signupValidators = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-    .custom((v) => { if (!PASSWORD_RULES.number.test(v)) throw new Error('Password must contain at least 1 number'); return true })
-    .custom((v) => { if (!PASSWORD_RULES.special.test(v)) throw new Error('Password must contain at least 1 special character'); return true }),
+    .custom(validatePasswordStrength),
   body('role').optional().isIn(['student', 'company']).withMessage('Invalid role'),
   body('companyName').if(body('role').equals('company')).trim().notEmpty().withMessage('Company name is required'),
 ]
-
-const PASSWORD_RULES = { minLength: 8, number: /[0-9]/, special: /[!@#$%^&*(),.?":{}|<>_\-]/ }
 
 const companySignupValidators = [
   body('companyName').trim().notEmpty().withMessage('Company name is required'),
   body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-    .custom((v) => { if (!PASSWORD_RULES.number.test(v)) throw new Error('Password must contain at least 1 number'); return true })
-    .custom((v) => { if (!PASSWORD_RULES.special.test(v)) throw new Error('Password must contain at least 1 special character'); return true }),
+    .custom(validatePasswordStrength),
   body('contactPerson').trim().notEmpty().withMessage('Contact person name is required'),
   body('designation').isIn(['Founder', 'HR Manager', 'Recruiter', 'Talent Acquisition', 'Other']).withMessage('Select a valid designation'),
   body('phone').notEmpty().withMessage('Phone number is required'),
@@ -59,7 +67,8 @@ const forgotPasswordValidators = [
 ]
 
 const resetPasswordValidators = [
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .custom(validatePasswordStrength),
 ]
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
@@ -354,12 +363,14 @@ router.post('/verify-otp', async (req, res) => {
     user.otpAttempts     = 0
     await user.save()
 
-    const token = signToken(user._id)
-    setTokenCookie(res, token)
-    res.json({
-      message: 'Email verified successfully!',
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role },
-    })
+const token = signToken(user._id)
+     const refreshToken = signRefreshToken(user._id)
+     setTokenCookie(res, token)
+     setRefreshTokenCookie(res, refreshToken)
+     res.json({
+       message: 'Email verified successfully!',
+       user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+     })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
@@ -435,18 +446,43 @@ router.post('/login', loginLimiter, loginValidators, validate, async (req, res) 
       })
     }
 
-    const token = signToken(user._id)
-    setTokenCookie(res, token)
-    res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role } })
+const token = signToken(user._id)
+     const refreshToken = signRefreshToken(user._id)
+     setTokenCookie(res, token)
+     setRefreshTokenCookie(res, refreshToken)
+     res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role } })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', protect, async (req, res) => {
+  try {
+    const token = req.cookies?.jwt
+    if (token) {
+      const decoded = jwt.decode(token)
+      const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      await TokenBlacklist.create({ token, expiresAt })
+    }
+  } catch (e) {
+    console.error('Blacklist error:', e.message)
+  }
   clearTokenCookie(res)
+  res.clearCookie('csrf-token')
   res.json({ message: 'Logged out' })
+})
+
+// GET /api/auth/csrf-token - Get CSRF token for authenticated requests
+router.get('/csrf-token', protect, (req, res) => {
+  const token = crypto.randomBytes(32).toString('hex')
+  res.cookie('csrf-token', token, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 1000 * 60 * 60 * 24
+  })
+  res.json({ csrfToken: token })
 })
 
 // GET /api/auth/me
@@ -471,7 +507,8 @@ router.post(
   protect,
   [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
-    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+      .custom(validatePasswordStrength),
   ],
   validate,
   async (req, res) => {
@@ -569,13 +606,39 @@ router.get('/google/callback', (req, res, next) => {
         const failRedirect = decodedRedirect ? `&redirect=${encodeURIComponent(decodedRedirect)}` : ''
         return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_auth_failed${failRedirect}`)
       }
-      const { token, user } = data
-      setTokenCookie(res, token)
-      const encoded = Buffer.from(JSON.stringify({ user })).toString('base64')
+const { token, user } = data
+       const refreshToken = signRefreshToken(user._id)
+       setTokenCookie(res, token)
+       setRefreshTokenCookie(res, refreshToken)
+       const encoded = Buffer.from(JSON.stringify({ user })).toString('base64')
       // Preserve redirect parameter - it's already been decoded once by Express, encode it for the next hop
       const redirectParam = req.query.redirect ? `&redirect=${encodeURIComponent(req.query.redirect)}` : ''
       res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/callback?data=${encoded}${redirectParam}`)
     })(req, res, next)
   })
+
+/**
+ * POST /api/auth/refresh
+ * Body: { refreshToken } (from cookie)
+ * Returns new access token if refresh token is valid.
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.['refresh-token']
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'No refresh token' })
+    }
+    const decoded = verifyRefreshToken(refreshToken)
+    const user = await User.findById(decoded.id).select('-password')
+    if (!user || user.isBlocked) {
+      return res.status(401).json({ message: 'Invalid refresh token' })
+    }
+    const token = signToken(user._id)
+    setTokenCookie(res, token)
+    res.json({ user: { _id: user._id, name: user.name, email: user.email, role: user.role } })
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid refresh token' })
+  }
+})
 
 module.exports = router

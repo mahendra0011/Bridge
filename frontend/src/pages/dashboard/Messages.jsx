@@ -3,13 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Send, MessageSquare, Building2, User as UserIcon,
   Check, CheckCheck, Paperclip, Search, Flag, Ban, AlertTriangle,
-  Clock, Briefcase, MapPin, ExternalLink, Info, X,
+  Clock, Briefcase, MapPin, ExternalLink, Info, X, Smile,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useSocket } from '@/hooks/useSocket'
+import EmojiPicker from 'emoji-picker-react'
 import { SocialMessageBubble } from '@/components/chat/SocialMessageBubble'
 import { SocialChatHeader } from '@/components/chat/SocialChatHeader'
 
@@ -77,6 +78,8 @@ export default function Messages() {
   const [showMsgSearch, setShowMsgSearch] = useState(false)
   const [searchingMsg, setSearchingMsg] = useState(false)
   const [replyToMessage, setReplyToMessage] = useState(null)
+  const [showTextEmojiPicker, setShowTextEmojiPicker] = useState(false)
+  const textEmojiPickerRef = useRef(null)
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
@@ -216,6 +219,16 @@ export default function Messages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (textEmojiPickerRef.current && !textEmojiPickerRef.current.contains(e.target)) {
+        setShowTextEmojiPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadMore = async () => {
     if (!hasMore || !activeConv) return
@@ -647,13 +660,32 @@ export default function Messages() {
                       >
                         <Paperclip className="size-4" />
                       </button>
-                      <input
-                        value={text}
-                        onChange={(e) => { setText(e.target.value); handleTyping() }}
-                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                        placeholder="Type a message or paste emojis..."
-                        className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
-                      />
+                      <div className="relative flex-1" ref={textEmojiPickerRef}>
+                        <input
+                          value={text}
+                          onChange={(e) => { setText(e.target.value); handleTyping() }}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                          placeholder="Type a message..."
+                          className="w-full rounded-xl border border-slate-200 px-10 py-2.5 text-sm outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => setShowTextEmojiPicker(!showTextEmojiPicker)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary"
+                          title="Insert emoji"
+                        >
+                          <Smile className="size-4" />
+                        </button>
+                        {showTextEmojiPicker && (
+                          <div className="absolute bottom-full left-0 mb-2 z-50">
+                            <EmojiPicker
+                              onEmojiClick={(emoji) => { setText(text + emoji.emoji); setShowTextEmojiPicker(false) }}
+                              width={280}
+                              height={320}
+                              previewConfig={{ showPreview: false }}
+                            />
+                          </div>
+                        )}
+                      </div>
                       <button
                         onClick={handleSend}
                         disabled={!text.trim() || sending}
