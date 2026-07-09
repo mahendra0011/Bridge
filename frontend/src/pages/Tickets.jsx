@@ -1,0 +1,184 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowLeft, Plus, MessageSquare, Clock, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
+import { api } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
+
+const categoryLabels = { account: 'Account', posting: 'Posting', application: 'Application', payment: 'Payment', technical: 'Technical', other: 'Other' }
+
+const statusStyles = {
+  open: 'bg-blue-50 text-blue-700',
+  in_progress: 'bg-amber-50 text-amber-700',
+  waiting: 'bg-violet-50 text-violet-700',
+  resolved: 'bg-emerald-50 text-emerald-700',
+  closed: 'bg-slate-100 text-slate-500',
+}
+
+export default function Tickets() {
+  const { user } = useAuth()
+  const role = user?.role || 'student'
+  const base = role === 'company' ? '/company' : '/dashboard'
+  const apiPath = role === 'company' ? '/api/company' : '/api/student'
+
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [subject, setSubject] = useState('')
+  const [message, setMessage] = useState('')
+  const [category, setCategory] = useState('other')
+  const [submitting, setSubmitting] = useState(false)
+  const [expandedId, setExpandedId] = useState(null)
+  const [replyText, setReplyText] = useState('')
+  const [replying, setReplying] = useState(null)
+  const [sendingReply, setSendingReply] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    api.get(`${apiPath}/tickets`)
+      .then(data => setTickets(data.tickets || []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const createTicket = async (e) => {
+    e.preventDefault()
+    if (!subject || !message) return toast.error('Subject and message are required')
+    setSubmitting(true)
+    try {
+      const data = await api.post(`${apiPath}/tickets`, { subject, message, category })
+      setTickets(p => [data.ticket, ...p])
+      setShowForm(false)
+      setSubject('')
+      setMessage('')
+      setCategory('other')
+      toast.success('Ticket created!')
+    } catch (err) { toast.error(err.message) }
+      finally { setSubmitting(false) }
+  }
+
+  const sendReply = async (ticketId) => {
+    if (!replyText.trim()) return
+    setSendingReply(true)
+    try {
+      const data = await api.post(`${apiPath}/tickets/${ticketId}/reply`, { content: replyText })
+      setTickets(p => p.map(t => t._id === ticketId ? data.ticket : t))
+      setReplyText('')
+      setReplying(null)
+      toast.success('Reply sent')
+    } catch (err) { toast.error(err.message) }
+      finally { setSendingReply(false) }
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8 space-y-6">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <Link to={base} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-primary mb-2">
+              <ArrowLeft className="size-4" /> Dashboard
+            </Link>
+            <h1 className="text-2xl font-extrabold sm:text-3xl">Support Tickets</h1>
+            <p className="text-sm text-slate-500">Get help with your account, postings, and more.</p>
+          </div>
+          <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Plus className="size-4" /> New Ticket
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)}
+          </div>
+        ) : tickets.length === 0 && !showForm ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 p-16 text-center text-slate-400">
+            <MessageSquare className="mx-auto mb-3 size-10 text-slate-300" />
+            <p className="font-semibold text-slate-600">No tickets yet</p>
+            <p className="mt-1 text-sm">Create a support ticket and our team will get back to you.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tickets.map(t => {
+              const isOpen = expandedId === t._id
+              return (
+                <div key={t._id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                  <button onClick={() => setExpandedId(isOpen ? null : t._id)} className="w-full flex items-center justify-between p-4 text-left hover:bg-surface transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold truncate">{t.subject}</h3>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusStyles[t.status] || statusStyles.open}`}>{t.status}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {categoryLabels[t.category] || t.category} · {new Date(t.createdAt).toLocaleDateString('en-IN')}
+                      </p>
+                    </div>
+                    <ChevronDown className={`size-4 text-slate-400 shrink-0 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="border-t border-slate-100 p-4 space-y-4">
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {t.messages?.map((msg, i) => (
+                          <div key={i} className={`flex ${msg.sender === user?._id ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${msg.sender === user?._id ? 'bg-primary text-primary-foreground' : 'bg-slate-100'}`}>
+                              <p className="text-sm">{msg.content}</p>
+                              <p className="text-[10px] mt-0.5 opacity-70">{new Date(msg.createdAt).toLocaleString('en-IN')}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {replying === t._id ? (
+                        <div className="flex gap-2">
+                          <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={2} placeholder="Type your reply..." className="flex-1 rounded-lg border border-slate-200 p-2 text-sm outline-none focus:border-primary" />
+                          <div className="flex flex-col gap-1">
+                            <button onClick={() => sendReply(t._id)} disabled={sendingReply} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-60">Send</button>
+                            <button onClick={() => { setReplying(null); setReplyText('') }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        t.status !== 'resolved' && t.status !== 'closed' && (
+                          <button onClick={() => setReplying(t._id)} className="text-xs font-bold text-primary hover:underline">Reply</button>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {showForm && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-bold">New Support Ticket</h3>
+              <p className="mt-1 text-sm text-slate-500">Describe your issue and our team will help.</p>
+              <form onSubmit={createTicket} className="mt-5 space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Subject *</label>
+                  <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Brief summary of your issue" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Category</label>
+                  <select value={category} onChange={e => setCategory(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white">
+                    {Object.entries(categoryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Message *</label>
+                  <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5} placeholder="Describe your issue in detail..." className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:border-primary hover:text-primary transition-colors">Cancel</button>
+                  <button type="submit" disabled={submitting} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors">
+                    {submitting ? 'Submitting...' : 'Submit Ticket'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  )
+}
