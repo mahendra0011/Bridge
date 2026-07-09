@@ -1,0 +1,221 @@
+const mongoose = require('mongoose')
+const Company = require('./src/models/Company')
+const Job = require('./src/models/Job')
+const Internship = require('./src/models/Internship')
+const User = require('./src/models/User')
+
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
+
+async function seed() {
+  try {
+    await mongoose.connect(MONGO_URI)
+    console.log('Connected to MongoDB\n')
+
+    // ── Find or create a company user ──────────────────────────────────────
+    let companyUser = await User.findOne({ email: 'hr@healthtechinc.com' })
+    if (!companyUser) {
+      companyUser = await User.create({
+        name: 'HealthTech HR',
+        email: 'hr@healthtechinc.com',
+        password: 'company@123',
+        role: 'company',
+        isEmailVerified: true,
+      })
+      console.log('✅ Created company user: hr@healthtechinc.com / company@123')
+    } else {
+      console.log('ℹ️  Found existing company user')
+    }
+
+    // ── Upsert company (create if not exists, update if exists) ────────────
+    const company = await Company.findOneAndUpdate(
+      { slug: 'healthtech-inc' },
+      {
+        $set: {
+          user: companyUser._id,
+          name: 'HealthTech Inc',
+          slug: 'healthtech-inc',
+          logoUrl: 'https://via.placeholder.com/150/0ea5e9/ffffff?text=HI',
+          coverUrl: 'https://via.placeholder.com/1920x400/0ea5e9/ffffff?text=HealthTech+Cover',
+          industry: 'Healthcare Technology',
+          size: '51-200',
+          foundedYear: 2018,
+          hqLocation: 'San Francisco, CA, USA',
+          officeLocations: [
+            'San Francisco, CA',
+            'New York, NY',
+            'Austin, TX',
+            'Bangalore, India'
+          ],
+          website: 'https://healthtechinc.com',
+          linkedin: 'https://linkedin.com/company/healthtechinc',
+          description: 'HealthTech Inc is revolutionizing healthcare through AI-powered diagnostics and telemedicine solutions. We build products that help patients access quality care faster and help providers make better decisions.',
+          culture: 'We believe in innovation, empathy, and impact. Our team enjoys flexible work hours, continuous learning opportunities, and a supportive environment where every voice matters.',
+          companyEmailDomain: 'healthtechinc.com',
+          domainVerified: true,
+          isVerified: true,
+          likelyVerified: true,
+          isProfileComplete: true,
+          signupStep: 4,
+          designation: 'HR Manager',
+          totalHires: 45,
+          avgResponseTime: '24',
+          profileViews: 1250,
+          isActive: true,
+          photos: [
+            'https://via.placeholder.com/600x400/0ea5e9/ffffff?text=Office+1',
+            'https://via.placeholder.com/600x400/06b6d4/ffffff?text=Office+2',
+            'https://via.placeholder.com/600x400/14b8a6/ffffff?text=Team+Event'
+          ]
+        }
+      },
+      { upsert: true, new: true }
+    )
+    console.log(`✅ Company "${company.name}" ready (id: ${company._id})`)
+
+    // ── Upsert jobs ────────────────────────────────────────────────────────
+    const jobsData = [
+      {
+        title: 'Senior Full Stack Developer',
+        description: 'We are looking for an experienced Full Stack Developer to join our core team. You will work on our flagship healthcare platform.',
+        skills: ['React', 'Node.js', 'MongoDB', 'TypeScript', 'AWS'],
+        goodToHaveSkills: ['GraphQL', 'Docker', 'Kubernetes'],
+        location: 'San Francisco, CA',
+        mode: 'Hybrid',
+        experience: '3-5 years',
+        salaryMin: 120000,
+        salaryMax: 180000,
+        employmentType: 'Full-time',
+        roles: ['Build and maintain scalable web applications', 'Collaborate with cross-functional teams', 'Mentor junior developers'],
+        qualifications: ['B.Tech/MCA in Computer Science', '3+ years of experience', 'Strong problem-solving skills'],
+        benefits: ['Health insurance', 'WFH flexibility', 'Performance bonus', 'ESOPs'],
+        vacancies: 2,
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: 'approved',
+        applicantsCount: 15,
+        views: 230,
+        isBoosted: true
+      },
+      {
+        title: 'Product Manager',
+        description: 'Join our product team to shape the future of healthcare technology.',
+        skills: ['Product Management', 'Agile', 'User Research', 'Analytics'],
+        goodToHaveSkills: ['Healthcare domain experience', 'SQL'],
+        location: 'New York, NY',
+        mode: 'On-site',
+        experience: '5+ years',
+        salaryMin: 150000,
+        salaryMax: 200000,
+        employmentType: 'Full-time',
+        roles: ['Define product roadmap', 'Work with engineering teams', 'Conduct user research'],
+        qualifications: ['MBA or equivalent', '5+ years in product management'],
+        benefits: ['Health insurance', 'Remote-friendly', 'Performance bonus'],
+        vacancies: 1,
+        deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+        status: 'approved',
+        applicantsCount: 8,
+        views: 145,
+        isBoosted: false
+      }
+    ]
+
+    for (const j of jobsData) {
+      await Job.findOneAndUpdate(
+        { title: j.title, company: company._id },
+        { $set: { ...j, company: company._id, postedBy: companyUser._id } },
+        { upsert: true, new: true }
+      )
+    }
+    console.log(`✅ Upserted ${jobsData.length} jobs`)
+
+    // ── Upsert internships ─────────────────────────────────────────────────
+    const internshipsData = [
+      {
+        title: 'Software Engineering Intern',
+        description: 'A 6-month internship program for students passionate about building healthcare technology.',
+        skills: ['JavaScript', 'React', 'Node.js', 'SQL'],
+        goodToHaveSkills: ['Python', 'Docker'],
+        location: 'Bangalore, India',
+        mode: 'Hybrid',
+        duration: '6 Months',
+        stipend: 25000,
+        startDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+        hasPPO: true,
+        internshipType: 'Full-time',
+        roles: ['Develop features for our platform', 'Write unit tests', 'Participate in code reviews'],
+        learningOutcomes: ['Full-stack development skills', 'Agile methodologies', 'Healthcare domain knowledge'],
+        eligibility: { yearOfStudy: 'Final year', minCGPA: '7.5', noBacklogs: true },
+        degreeRequired: 'B.Tech/B.E. in CS/IT or related',
+        perks: ['Certificate', 'Letter of Recommendation', 'PPO opportunity', 'Mentorship'],
+        vacancies: 10,
+        deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+        status: 'approved',
+        applicantsCount: 42,
+        views: 560,
+        isBoosted: true
+      },
+      {
+        title: 'Data Science Intern',
+        description: 'Work with our data science team to build ML models for disease prediction.',
+        skills: ['Python', 'Machine Learning', 'Pandas', 'SQL'],
+        goodToHaveSkills: ['TensorFlow', 'PyTorch', 'Statistics'],
+        location: 'San Francisco, CA',
+        mode: 'Remote',
+        duration: '3 Months',
+        stipend: 3000,
+        startDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+        hasPPO: false,
+        internshipType: 'Full-time',
+        roles: ['Build ML models', 'Analyze healthcare datasets', 'Create visualizations'],
+        learningOutcomes: ['ML/AI skills', 'Data analysis', 'Healthcare analytics'],
+        eligibility: { yearOfStudy: '3rd/4th year', minCGPA: '8.0', noBacklogs: true },
+        degreeRequired: 'B.Tech in Data Science/CS/Statistics',
+        perks: ['Certificate', 'Flexible hours', 'Mentorship'],
+        vacancies: 5,
+        deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
+        status: 'approved',
+        applicantsCount: 28,
+        views: 340,
+        isBoosted: false
+      }
+    ]
+
+    for (const i of internshipsData) {
+      await Internship.findOneAndUpdate(
+        { title: i.title, company: company._id },
+        { $set: { ...i, company: company._id, postedBy: companyUser._id } },
+        { upsert: true, new: true }
+      )
+    }
+    console.log(`✅ Upserted ${internshipsData.length} internships`)
+
+    // ── Upsert a sample review ─────────────────────────────────────────────
+    const CompanyReview = require('./src/models/CompanyReview')
+    await CompanyReview.findOneAndUpdate(
+      { company: company._id, reviewer: companyUser._id },
+      {
+        $set: {
+          company: company._id,
+          reviewer: companyUser._id,
+          rating: 4,
+          text: 'Great place to work! Good work-life balance and amazing team culture.',
+          status: 'approved'
+        }
+      },
+      { upsert: true, new: true }
+    )
+    console.log('✅ Upserted sample review')
+
+    console.log('\n✅ Seed completed successfully!')
+    console.log(`Company: ${company.name}`)
+    console.log(`Jobs: ${jobsData.length} | Internships: ${internshipsData.length} | Reviews: 1`)
+    console.log(`\nVisit: http://localhost:5173/company/${company._id}`)
+
+    await mongoose.disconnect()
+    process.exit(0)
+  } catch (err) {
+    console.error('Seed failed:', err)
+    process.exit(1)
+  }
+}
+
+seed()
