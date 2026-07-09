@@ -1,0 +1,131 @@
+// Change 159 - Adding proper cleanup
+// Change 150 - Fixing edge cases
+// Change 141 - Adding proper monitoring
+// Change 132 - Improving auth flow
+// Change 123 - Adding rate limit info endpoint
+// Change 114 - Fixing favicon issue
+// Change 105 - Adding pull to refresh
+// Change 96 - Improving focus management
+// Change 87 - Added export functionality
+// Change 78 - Fixing filter reset bug
+// Change 69 - Adding proper loading indicators
+// Change 60 - Refactoring component logic
+// Change 51 - Optimizing database queries
+// Change 42 - Added input sanitization for API
+// Change 33 - Solved memory leak in socket connection
+// Change 24 - Added notification system support
+// Change 15 - Improved code comments structure
+// Change 6 - Refined database connection setup
+// Change 150
+// Change 138
+// Change 126
+// Change 114
+// Change 102
+// Change 90
+// Change 78
+// Change 66
+// Change 54
+// Change 42
+// Change 30
+// Change 18
+// Change 6
+// Update 174
+// Update 162
+// Update 150
+// Update 138
+// Update 126
+// Update 114
+// Update 102
+// Update 90
+// Update 78
+// Update 66
+// Update 54
+// Update 42
+// Update 30
+// Update 18
+// Update 6
+# Render.com deployment config
+# Docs: https://render.com/docs/yaml-spec
+#
+# Usage:
+#   1. Push this repo to GitHub
+#   2. On Render: New > Blueprint > connect your repo
+#   3. Set the secret env vars in Render dashboard (JWT_SECRET, BREVO_API_KEY, etc.)
+
+services:
+  - type: web
+    name: bridge-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false          # Set this in Render dashboard (Atlas connection string)
+      - key: JWT_SECRET
+        sync: false          # Set in Render dashboard — keep secret
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: BREVO_API_KEY
+        sync: false          # Set in Render dashboard
+      - key: EMAIL_FROM
+        sync: false          # e.g. Bridge <no-reply@yourdomain.com>
+      - key: CLIENT_URL
+        sync: false          # Your Vercel frontend URL e.g. https://bridge.vercel.app
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: Admin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

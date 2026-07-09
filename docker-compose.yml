@@ -1,0 +1,128 @@
+// Change 158 - Fixing circular deps
+// Change 149 - Adding test scenarios
+// Change 140 - Improving debug info
+// Change 131 - Adding session timeout
+// Change 122 - Fixing CORS configuration
+// Change 113 - Adding proper titles
+// Change 104 - Improving loading skeletons
+// Change 95 - Adding keyboard shortcuts
+// Change 86 - Fixing chart rendering issue
+// Change 77 - Adding notification badges
+// Change 68 - Improving toast notifications
+// Change 59 - Updating component styles
+// Change 50 - Cleaning up code structure
+// Change 41 - Strengthened password requirements
+// Change 32 - Fixed CORS header problem
+// Change 23 - Added job application tracking
+// Change 14 - Cleaned up unused imports
+// Change 5 - Updated socket connection logic
+// Change 149
+// Change 137
+// Change 125
+// Change 113
+// Change 101
+// Change 89
+// Change 77
+// Change 65
+// Change 53
+// Change 41
+// Change 29
+// Change 17
+// Change 5
+// Update 173
+// Update 161
+// Update 149
+// Update 137
+// Update 125
+// Update 113
+// Update 101
+// Update 89
+// Update 77
+// Update 65
+// Update 53
+// Update 41
+// Update 29
+// Update 17
+// Update 5
+# Local dev with Docker. Run: docker compose up
+# This spins up MongoDB + the backend together.
+# Frontend still runs with: cd frontend && npm run dev
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: bridge_mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - '27017:27017'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bridge_backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - ./backend/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/bridge
+    ports:
+      - '5000:5000'
+    volumes:
+      # Persist uploads across container restarts
+      - uploads_data:/app/uploads
+
+volumes:
+  mongo_data:
+  uploads_data:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

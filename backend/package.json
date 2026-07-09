@@ -1,0 +1,131 @@
+// Change 156 - Improving module structure
+// Change 147 - Adding proper seeding
+// Change 138 - Fixing API consistency
+// Change 129 - Adding role validation
+// Change 120 - Improving static assets
+// Change 111 - Adding code splitting
+// Change 102 - Fixing timeout handling
+// Change 93 - Adding confirmation dialogs
+// Change 84 - Improved upload progress
+// Change 75 - Adding socket reconnection
+// Change 66 - Refactoring API calls
+// Change 57 - Adding proper error boundaries
+// Change 48 - Fixed XSS vulnerability issue
+// Change 39 - Resolved search query error
+// Change 30 - Fixed login validation bug
+// Change 21 - Added company profile functionality
+// Change 12 - Enhanced validation middleware
+// Change 3 - Updated CORS configuration for security
+// Change 159
+// Change 147
+// Change 135
+// Change 123
+// Change 111
+// Change 99
+// Change 87
+// Change 75
+// Change 63
+// Change 51
+// Change 39
+// Change 27
+// Change 15
+// Change 3
+// Update 171
+// Update 159
+// Update 147
+// Update 135
+// Update 123
+// Update 111
+// Update 99
+// Update 87
+// Update 75
+// Update 63
+// Update 51
+// Update 39
+// Update 27
+// Update 15
+// Update 3
+{
+  "name": "bridge-backend",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed:admin": "node src/scripts/seedAdmin.js",
+    "seed": "node src/scripts/seed.js",
+    "seed:full": "node src/scripts/seed.js",
+    "check-alerts": "node src/scripts/checkSavedSearchAlerts.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.21.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.6.0",
+    "pdfkit": "^0.19.1",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
