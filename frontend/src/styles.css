@@ -1,0 +1,119 @@
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/plus-jakarta-sans/800.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.04 265);
+  --brand: oklch(0.21 0.04 265);
+  --brand-foreground: oklch(1 0 0);
+  --surface: oklch(0.985 0.005 247);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.04 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.04 265);
+  --primary: oklch(0.55 0.22 264);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+}
+
+/* ── Dark mode token overrides ── */
+.dark {
+  --background: oklch(0.13 0.03 265);
+  --foreground: oklch(0.95 0.01 247);
+  --brand: oklch(0.95 0.01 247);
+  --brand-foreground: oklch(0.13 0.03 265);
+  --surface: oklch(0.17 0.03 265);
+  --card: oklch(0.17 0.03 265);
+  --card-foreground: oklch(0.95 0.01 247);
+  --popover: oklch(0.17 0.03 265);
+  --popover-foreground: oklch(0.95 0.01 247);
+  --primary: oklch(0.65 0.22 264);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.22 0.03 265);
+  --secondary-foreground: oklch(0.95 0.01 247);
+  --muted: oklch(0.22 0.03 265);
+  --muted-foreground: oklch(0.65 0.04 257);
+  --accent: oklch(0.22 0.03 265);
+  --accent-foreground: oklch(0.95 0.01 247);
+  --destructive: oklch(0.65 0.22 27);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.28 0.03 265);
+  --input: oklch(0.28 0.03 265);
+  --ring: oklch(0.55 0.12 264);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* CSS variable utility classes to bridge Tailwind with OKLCH tokens */
+.bg-background { background-color: var(--background); }
+.bg-foreground { background-color: var(--foreground); }
+.bg-brand { background-color: var(--brand); }
+.text-brand-foreground { color: var(--brand-foreground); }
+.bg-surface { background-color: var(--surface); }
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.bg-primary\/10 { background-color: oklch(0.55 0.22 264 / 0.10); }
+.bg-primary\/20 { background-color: oklch(0.55 0.22 264 / 0.20); }
+.border-primary { border-color: var(--primary); }
+.text-foreground { color: var(--foreground); }
+.bg-card { background-color: var(--card); }
+.hover\:bg-primary\/90:hover { background-color: oklch(0.55 0.22 264 / 0.90); }
+.hover\:bg-primary:hover { background-color: var(--primary); }
+.hover\:border-primary:hover { border-color: var(--primary); }
+.hover\:text-primary:hover { color: var(--primary); }
+.ring-primary { --tw-ring-color: var(--primary); }
+.accent-primary { accent-color: var(--primary); }
+
+/* Dark mode: slate overrides via CSS vars so components auto-adapt */
+.dark .bg-white { background-color: var(--card) !important; }
+.dark .bg-slate-50 { background-color: oklch(0.19 0.03 265) !important; }
+.dark .bg-slate-100 { background-color: oklch(0.22 0.03 265) !important; }
+.dark .border-slate-100 { border-color: oklch(0.23 0.03 265) !important; }
+.dark .border-slate-200 { border-color: var(--border) !important; }
+.dark .text-slate-400 { color: oklch(0.55 0.04 265) !important; }
+.dark .text-slate-500 { color: oklch(0.60 0.04 265) !important; }
+.dark .text-slate-600 { color: oklch(0.65 0.04 265) !important; }
+.dark .text-slate-700 { color: oklch(0.75 0.03 265) !important; }
+.dark .text-slate-800 { color: oklch(0.85 0.02 265) !important; }
+.dark .bg-white\/95 { background-color: oklch(0.13 0.03 265 / 0.95) !important; }
+
+.outline-hidden { outline: none; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in { animation: fade-in 0.2s ease; }
+.animate-scale-in { animation: scale-in 0.2s ease; }
