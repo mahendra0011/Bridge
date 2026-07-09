@@ -553,12 +553,11 @@ export default function OpportunityDetail() {
                   </Button>
                   <Button onClick={() => {
                     if (!poster._id) { toast.error('Cannot message poster'); return }
-                    // Default to student role for redirect (user will be redirected properly after login)
                     const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
                     const redirectUrl = `${msgBase}?userId=${poster._id}`
-                    if (!user) { window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`; return }
+                    if (!user) { navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`); return }
                     if (user.role === 'student' || user.role === 'company' || user.role === 'agency') {
-                      window.location.href = redirectUrl
+                      navigate(redirectUrl)
                     } else {
                       toast.error('Messaging is only available for students, companies, and agencies')
                     }

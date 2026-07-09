@@ -1,19 +1,36 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Plus, MessageSquare, Clock, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Plus, MessageSquare, Clock, CheckCircle2, AlertCircle, ChevronDown, Send, UserCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 
+const categoryIcons = {
+  account: UserCircle2,
+  posting: Plus,
+  application: CheckCircle2,
+  payment: Clock,
+  technical: AlertCircle,
+  other: MessageSquare,
+}
+
 const categoryLabels = { account: 'Account', posting: 'Posting', application: 'Application', payment: 'Payment', technical: 'Technical', other: 'Other' }
 
 const statusStyles = {
-  open: 'bg-blue-50 text-blue-700',
-  in_progress: 'bg-amber-50 text-amber-700',
-  waiting: 'bg-violet-50 text-violet-700',
-  resolved: 'bg-emerald-50 text-emerald-700',
-  closed: 'bg-slate-100 text-slate-500',
+  open: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+  in_progress: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+  waiting: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+  resolved: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  closed: 'bg-slate-100 text-slate-500 ring-1 ring-slate-200',
+}
+
+const statusLabels = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  waiting: 'Waiting',
+  resolved: 'Resolved',
+  closed: 'Closed',
 }
 
 export default function Tickets() {

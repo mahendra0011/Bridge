@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   MapPin, Briefcase, GraduationCap, Building2, FileText,
@@ -43,6 +43,8 @@ export function CandidateCard({ candidate, index = 0, companyId, onUpdate, detai
   const activeDays = candidate.lastActive ? timeAgo(candidate.lastActive) : ''
   const isActiveRecently = candidate.lastActive && (Date.now() - new Date(candidate.lastActive).getTime() < 7 * 86400000)
 
+  const navigate = useNavigate()
+
   const handleShortlist = async () => {
     try {
       const res = await api.post(`/api/company/candidates/${user._id}/shortlist`, {})
@@ -55,11 +57,11 @@ export function CandidateCard({ candidate, index = 0, companyId, onUpdate, detai
 
   const handleMessage = () => {
     const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
-    window.location.href = `${msgBase}?userId=${user._id}`
+    navigate(`${msgBase}?userId=${user._id}`)
   }
 
   const handleInvite = () => {
-    window.location.href = `/company/candidates/invite/${user._id}`
+    navigate(`/company/candidates/invite/${user._id}`)
   }
 
   return (

@@ -8,6 +8,9 @@ import {
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { JobCard, JobCardSkeleton } from '@/components/site/job-card'
+import { InternshipCard, InternshipCardSkeleton } from '@/components/site/internship-card'
+import { normalizeOpportunity } from '@/lib/normalize'
 
 function StatCard({ icon, label, value, trend, color, gradient }) {
   const [animatedVal, setAnimatedVal] = useState(0)
@@ -96,16 +99,33 @@ function ActivityCard({ icon, label, desc, time, color }) {
 export default function Dashboard() {
   const { user } = useAuth()
   const [apps, setApps] = useState([])
+  const [saved, setSaved] = useState([])
   const [profile, setProfile] = useState(null)
+  const [openToWorkData, setOpenToWorkData] = useState({ openToWork: false, headline: '', openTo: 'both', skills: [], relocate: false })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.get('/api/student/applications'), api.get('/api/student/profile')])
-      .then(([appsData, profileData]) => {
+    Promise.all([
+      api.get('/api/student/applications'),
+      api.get('/api/student/profile'),
+      api.get('/api/student/saved'),
+      api.get('/api/student/open-to-work/status')
+    ])
+      .then(([appsData, profileData, savedData, otwData]) => {
         if (cancelled) return
         setApps(appsData.applications || [])
         setProfile(profileData.profile)
+        setOpenToWorkData({
+          openToWork: otwData?.openToWork || false,
+          headline: otwData?.headline || '',
+          openTo: otwData?.openTo || 'both',
+          skills: otwData?.skills || [],
+          relocate: otwData?.relocate || false
+        })
+        const jobs = (savedData.savedJobs || []).map((j) => normalizeOpportunity(j, 'job'))
+        const internships = (savedData.savedInternships || []).map((i) => normalizeOpportunity(i, 'internship'))
+        setSaved([...internships, ...jobs])
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -163,6 +183,80 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Open to Work Section */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-emerald-500" />
+              <h2 className="text-base font-extrabold text-foreground sm:text-lg">Open to Work</h2>
+            </div>
+            <Link to="/open-to-work/settings" className="text-xs font-semibold text-primary hover:underline sm:text-sm">
+              Manage Settings →
+            </Link>
+          </div>
+          <div className="rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-50 via-white to-white p-5 sm:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className={`grid size-14 shrink-0 place-items-center rounded-2xl ${openToWorkData.openToWork ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                  <Sparkles className={`size-7 ${openToWorkData.openToWork ? 'text-emerald-600' : 'text-slate-400'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                      openToWorkData.openToWork 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      <span className={`size-2 rounded-full ${openToWorkData.openToWork ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                      {openToWorkData.openToWork ? 'Active' : 'Inactive'}
+                    </span>
+                    {openToWorkData.openToWork && openToWorkData.openTo && (
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
+                        {openToWorkData.openTo === 'both' ? 'Jobs & Internships' : openToWorkData.openTo === 'job' ? 'Jobs' : 'Internships'}
+                      </span>
+                    )}
+                    {openToWorkData.openToWork && openToWorkData.relocate && (
+                      <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 border border-blue-200">
+                        Open to relocate
+                      </span>
+                    )}
+                  </div>
+                  <p className={`mt-2 text-sm ${openToWorkData.openToWork ? 'text-slate-600' : 'text-slate-500'}`}>
+                    {openToWorkData.openToWork 
+                      ? (openToWorkData.headline || 'Your profile is visible to recruiters. Companies can find you in their search results.')
+                      : 'Enable "Open to Work" to make your profile visible to companies actively hiring.'}
+                  </p>
+                  {openToWorkData.openToWork && openToWorkData.skills?.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {openToWorkData.skills.slice(0, 5).map((skill, i) => (
+                        <span key={i} className="inline-flex items-center rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20">
+                          {skill}
+                        </span>
+                      ))}
+                      {openToWorkData.skills.length > 5 && (
+                        <span className="inline-flex items-center rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20">
+                          +{openToWorkData.skills.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Link
+                to="/open-to-work/settings"
+                className={`shrink-0 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+                  openToWorkData.openToWork
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20'
+                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
+                }`}
+              >
+                <Sparkles className="size-4" />
+                {openToWorkData.openToWork ? 'Edit Profile' : 'Get Started'}
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* Stats Section */}
         <section>
@@ -359,6 +453,107 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* My Applications Section */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Send className="size-4 text-sky-600" />
+              <h2 className="text-base font-extrabold text-foreground sm:text-lg">My Applications</h2>
+            </div>
+            <Link to="/dashboard/applications" className="text-xs font-semibold text-primary hover:underline sm:text-sm">
+              View All →
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <JobCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : apps.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+              <div className="mb-4 grid size-16 place-items-center rounded-2xl bg-slate-100">
+                <Send className="size-8 text-slate-300" />
+              </div>
+              <p className="font-semibold text-slate-600">No applications yet</p>
+              <p className="mt-1 text-sm text-slate-400">Browse internships and apply to get started.</p>
+              <Link to="/internships" className="mt-4 rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary/90">
+                Browse Internships
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {apps.slice(0, 4).map((app, idx) => (
+                <Link
+                  key={app._id}
+                  to={`/${app.postingType}/${app.posting?._id || app.posting}`}
+                  className="group rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:shadow-md"
+                >
+                  <div className="mb-2 flex items-start justify-between">
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 ${
+                      app.status === 'Applied' ? 'bg-sky-50 text-sky-700 ring-sky-200' :
+                      app.status === 'Shortlisted' ? 'bg-blue-50 text-blue-700 ring-blue-200' :
+                      app.status === 'Interview Scheduled' ? 'bg-violet-50 text-violet-700 ring-violet-200' :
+                      app.status === 'Offered' || app.status === 'Hired' || app.status === 'Selected' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' :
+                      'bg-slate-100 text-slate-700 ring-slate-200'
+                    }`}>
+                      {app.status}
+                    </span>
+                    <ChevronRight className="size-4 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900 line-clamp-2 group-hover:text-primary">
+                    {app.posting?.title || 'Application'}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">{app.posting?.company?.name || app.posting?.company || 'Company'}</p>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                    <Calendar className="size-3" />
+                    Applied {app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Saved Roles Section */}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bookmark className="size-4 text-amber-500" />
+              <h2 className="text-base font-extrabold text-foreground sm:text-lg">Saved Roles</h2>
+            </div>
+            <Link to="/saved" className="text-xs font-semibold text-primary hover:underline sm:text-sm">
+              View All →
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                i % 2 === 0 ? <InternshipCardSkeleton key={i} /> : <JobCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : saved.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+              <div className="mb-4 grid size-16 place-items-center rounded-2xl bg-slate-100">
+                <Bookmark className="size-8 text-slate-300" />
+              </div>
+              <p className="font-semibold text-slate-600">No saved roles yet</p>
+              <p className="mt-1 text-sm text-slate-400">Bookmark opportunities to view them later.</p>
+              <Link to="/internships" className="mt-4 rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary/90">
+                Browse Opportunities
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {saved.slice(0, 4).map((item, idx) => (
+                item.kind === 'internship'
+                  ? <InternshipCard key={`${item.kind}-${item.id}`} item={item} index={idx} />
+                  : <JobCard key={`${item.kind}-${item.id}`} item={item} index={idx} />
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Bottom - Quick Stats Bar */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

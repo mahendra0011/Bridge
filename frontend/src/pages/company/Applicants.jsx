@@ -247,10 +247,10 @@ export default function Applicants() {
                             className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:border-rose-400 hover:text-rose-600">
                             <XCircle className="size-3.5" />
                           </button>
-                          <a href={`/company/chat?userId=${a.applicant?._id}`} title="Message"
-                            className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600">
-                            <MessageSquare className="size-3.5" />
-                          </a>
+<Link to={`/company/chat?userId=${a.applicant?._id}`} title="Message"
+                             className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600">
+                             <MessageSquare className="size-3.5" />
+                           </Link>
                         </div>
                       </td>
                     </tr>

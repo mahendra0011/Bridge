@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, Briefcase, FileCheck, BookOpen,
   Settings, HelpCircle, ChevronDown, LogOut, User, Bell, Search,
@@ -16,24 +16,24 @@ import { api } from '@/lib/api'
 const roleConfig = {
   student: {
     title: 'Student Dashboard',
-    sections: [
-      { label: 'Home', icon: Home, to: '/' },
-      { label: 'Overview', icon: LayoutDashboard, to: '/dashboard' },
-      { label: 'Upcoming Interviews', icon: Clock, to: '/dashboard/interviews' },
-      { label: 'My Applications', icon: FileCheck, to: '/dashboard/applications' },
-      { label: 'Saved Role', icon: Bookmark, to: '/saved' },
-      { label: 'Recommended for You', icon: Star, to: '/dashboard/recommended' },
-      { label: 'Saved Search', icon: Search, to: '/saved-searches' },
-      { label: 'Messages', icon: MessageSquare, to: '/dashboard/messages' },
-      { label: 'Notification', icon: Bell, to: '/notifications' },
-      { label: 'My Profile', icon: User, to: '/profile' },
-      { label: 'Open to Work', icon: Sparkles, to: '/open-to-work/settings' },
-      { label: 'Document', icon: FolderOpen, to: '/dashboard/documents' },
-      { label: 'My Listings', icon: Briefcase, to: '/dashboard/listings' },
-      { label: 'Community Hub', icon: MessageCircle, to: '/dashboard/community' },
-      { label: 'Support Ticket', icon: Ticket, to: '/tickets' },
-      { label: 'Setting', icon: Settings, to: '/dashboard/settings' },
-    ],
+sections: [
+       { label: 'Home', icon: Home, to: '/' },
+       { label: 'Overview', icon: LayoutDashboard, to: '/dashboard' },
+       { label: 'Upcoming Interviews', icon: Clock, to: '/dashboard/interviews' },
+       { label: 'My Applications', icon: FileCheck, to: '/dashboard/applications' },
+       { label: 'Saved Roles', icon: Bookmark, to: '/saved' },
+       { label: 'Recommended for You', icon: Star, to: '/dashboard/recommended' },
+       { label: 'Saved Searches', icon: Search, to: '/saved-searches' },
+       { label: 'Messages', icon: MessageSquare, to: '/dashboard/messages' },
+       { label: 'Notification', icon: Bell, to: '/notifications' },
+       { label: 'My Profile', icon: User, to: '/profile' },
+       { label: 'Open to Work', icon: Sparkles, to: '/open-to-work/settings' },
+       { label: 'Document', icon: FolderOpen, to: '/dashboard/documents' },
+       { label: 'My Listings', icon: Briefcase, to: '/dashboard/listings' },
+       { label: 'Community Hub', icon: MessageCircle, to: '/dashboard/community' },
+       { label: 'Support Ticket', icon: Ticket, to: '/tickets' },
+       { label: 'Setting', icon: Settings, to: '/dashboard/settings' },
+     ],
     quickLinks: []
   },
 company: {
@@ -112,6 +112,7 @@ admin: {
 
 export function DashboardLayout({ children, sections: customSections }) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -129,7 +130,7 @@ export function DashboardLayout({ children, sections: customSections }) {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/'
+    navigate('/')
   }
 
   const avatarLetter = (user?.name || user?.email || '?')[0].toUpperCase()

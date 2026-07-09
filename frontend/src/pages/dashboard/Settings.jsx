@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Bell, Shield, Eye, Trash2, Check, Lock, User, Mail, Phone, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
@@ -73,6 +73,7 @@ function RadioGroup({ label, description, options, value, onChange }) {
 
 export default function Settings() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [settings, setSettings] = useState(null)
   const [userInfo, setUserInfo] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -122,7 +123,7 @@ export default function Settings() {
       await api.delete('/api/student/account', { body: { password: deletePassword } })
       toast.success('Account deleted')
       logout()
-      window.location.href = '/'
+      navigate('/')
     } catch (err) {
       toast.error(err.message || 'Failed to delete account')
     } finally {

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
   MapPin, Bookmark, Clock, BadgeCheck, Users, ExternalLink, Eye,
@@ -21,6 +21,7 @@ const statusColors = {
 }
 
 export function OpportunityCard({ item, index = 0 }) {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const savedIds = useSelector((state) => state.saved.ids)
   const key = `${item.kind}:${item.id}`
@@ -255,12 +256,11 @@ export function OpportunityCard({ item, index = 0 }) {
           onClick={() => {
             const posterId = item.posterId || item.poster?._id || item.poster
             if (!posterId) return
-            // Default to student role for redirect (user will be redirected properly after login)
             const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
             const redirectUrl = `${msgBase}?userId=${posterId}`
-            if (!user) { window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`; return }
+            if (!user) { navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`); return }
             if (user.role === 'student' || user.role === 'company' || user.role === 'agency') {
-              window.location.href = redirectUrl
+              navigate(redirectUrl)
             } else {
               toast.error('Messaging is only available for students, companies, and agencies')
             }

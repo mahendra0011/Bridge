@@ -96,7 +96,7 @@ export default function CompanyDashboard() {
           <QuickAction icon={<Plus className="size-5" />} label="Post a Job / Internship" to="/company/post" color="bg-primary/10 text-primary" />
           <QuickAction icon={<LayoutDashboard className="size-5" />} label="Applicant Pipeline (Kanban)" to="/company/pipeline" color="bg-violet-50 text-violet-600" />
           <QuickAction icon={<Calendar className="size-5" />} label="Interview Scheduling" to="/company/scheduling" color="bg-amber-50 text-amber-600" />
-          <QuickAction icon={<MessageSquare className="size-5" />} label="Messages & Chat" to="/company/chat" color="bg-emerald-50 text-emerald-600" />
+          <QuickAction icon={<MessageSquare className="size-5" />} label="Messages & Chat" to="/company/messages" color="bg-emerald-50 text-emerald-600" />
           <QuickAction icon={<BarChart3 className="size-5" />} label="Analytics Dashboard" to="/company/analytics" color="bg-rose-50 text-rose-600" />
           <QuickAction icon={<Building2 className="size-5" />} label="Company Profile" to="/company/profile" color="bg-cyan-50 text-cyan-600" />
           <QuickAction icon={<Bell className="size-5" />} label="Notifications" to="/company/notifications" color="bg-slate-100 text-slate-600" />
