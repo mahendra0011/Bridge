@@ -12,6 +12,18 @@ const messageSchema = new mongoose.Schema({
     type: { type: String, enum: ['resume', 'cover_letter', 'offer_letter', 'other'] },
   }],
   readBy:       [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  reactions:    [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    emoji: { type: String },
+  }],
+  replyTo: {
+    messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+    text: { type: String },
+    senderName: { type: String },
+  },
+  isEdited:     { type: Boolean, default: false },
+  isDeleted:    { type: Boolean, default: false },
+  isPinned:     { type: Boolean, default: false },
   // Red-flag auto-scan
   redFlagged:   { type: Boolean, default: false },
   redFlagReasons: [{ type: String }],

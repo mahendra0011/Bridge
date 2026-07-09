@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 const roleColors = {
   student: 'bg-blue-50 text-blue-700',
   company: 'bg-violet-50 text-violet-700',
+  agency: 'bg-emerald-50 text-emerald-700',
   admin: 'bg-amber-50 text-amber-700',
 }
 

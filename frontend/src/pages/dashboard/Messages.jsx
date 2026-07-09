@@ -10,6 +10,8 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useSocket } from '@/hooks/useSocket'
+import { SocialMessageBubble } from '@/components/chat/SocialMessageBubble'
+import { SocialChatHeader } from '@/components/chat/SocialChatHeader'
 
 function timeAgo(date) {
   if (!date) return ''
@@ -74,6 +76,7 @@ export default function Messages() {
   const [msgSearchResults, setMsgSearchResults] = useState([])
   const [showMsgSearch, setShowMsgSearch] = useState(false)
   const [searchingMsg, setSearchingMsg] = useState(false)
+  const [replyToMessage, setReplyToMessage] = useState(null)
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
@@ -114,11 +117,12 @@ export default function Messages() {
     'message:read': useCallback((data) => {
       if (data.conversationId === activeIdRef.current) {
         setMessages((prev) =>
-          prev.map((m) =>
-            data.messageIds.includes(m._id)
-              ? { ...m, readBy: [...(m.readBy || []), data.userId] }
-              : m
-          )
+          prev.map((m) => {
+            if (!data.messageIds.includes(m._id)) return m
+            if (String(m.sender?._id || m.sender) === String(data.userId)) return m
+            if ((m.readBy || []).includes(data.userId)) return m
+            return { ...m, readBy: [...(m.readBy || []), data.userId] }
+          })
         )
       }
     }, []),
@@ -228,7 +232,9 @@ export default function Messages() {
     if (!text.trim() || sending) return
     setSending(true)
     const msgText = text.trim()
+    const currentReply = replyToMessage
     setText('')
+    setReplyToMessage(null)
     const tempId = `temp-${Date.now()}`
     setMessages((prev) => [
       ...prev,
@@ -236,10 +242,14 @@ export default function Messages() {
         _id: tempId, text: msgText, sender: { _id: user._id, name: user.name, role: 'student' },
         senderRole: 'student', messageType: 'text', createdAt: new Date().toISOString(),
         readBy: [], sending: true,
+        replyTo: currentReply ? { messageId: currentReply._id, text: currentReply.text, senderName: currentReply.sender?.name } : undefined,
       },
     ])
     try {
-      const data = await api.post(`/api/student/conversations/${activeConv._id}/messages`, { text: msgText })
+      const data = await api.post(`/api/student/conversations/${activeConv._id}/messages`, {
+        text: msgText,
+        replyTo: currentReply ? { messageId: currentReply._id, text: currentReply.text, senderName: currentReply.sender?.name } : undefined,
+      })
       setMessages((prev) => prev.map((m) => (m._id === tempId ? { ...data.message } : m)))
       setConversations((prev) =>
         prev.map((c) =>
@@ -254,6 +264,52 @@ export default function Messages() {
     } finally {
       setSending(false)
     }
+  }
+
+  const handleReact = async (msgId, emoji) => {
+    if (!activeConv) return
+    try {
+      const res = await api.post(`/api/student/conversations/${activeConv._id}/messages/${msgId}/react`, { emoji })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
+  }
+
+  const handleEditMessage = async (msgId, editText) => {
+    if (!activeConv) return
+    try {
+      const res = await api.patch(`/api/student/conversations/${activeConv._id}/messages/${msgId}`, { text: editText })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message edited')
+      }
+    } catch {
+      toast.error('Failed to edit message')
+    }
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!activeConv) return
+    try {
+      const res = await api.delete(`/api/student/conversations/${activeConv._id}/messages/${msgId}`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message deleted')
+      }
+    } catch {
+      toast.error('Failed to delete message')
+    }
+  }
+
+  const handlePinMessage = async (msgId) => {
+    if (!activeConv) return
+    try {
+      const res = await api.patch(`/api/student/conversations/${activeConv._id}/messages/${msgId}/pin`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
   }
 
   const handleTyping = () => {
@@ -277,10 +333,20 @@ export default function Messages() {
     fd.append('name', file.name)
     try {
       const doc = await api.post('/api/student/documents', fd, { isFormData: true })
-      await api.post(`/api/student/conversations/${activeConv._id}/messages`, {
+      const data = await api.post(`/api/student/conversations/${activeConv._id}/messages`, {
         text: `Sent: ${file.name}`,
         attachments: [{ name: file.name, url: doc.document.url, type: file.type.includes('resume') ? 'resume' : 'other' }],
       })
+      if (data.message) {
+        setMessages((prev) => [...prev, data.message])
+        setConversations((prev) =>
+          prev.map((c) =>
+            c._id === activeConv._id
+              ? { ...c, lastMessage: data.message.text || 'Sent a file', lastMessageAt: data.message.createdAt, lastSender: user._id }
+              : c
+          )
+        )
+      }
       toast.success('File sent')
     } catch (err) {
       toast.error(err.message || 'Upload failed')
@@ -448,107 +514,36 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              {/* Context Header */}
-              <div className="border-b border-slate-200 bg-white">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <button
-                    onClick={() => setActiveConv(null)}
-                    className="rounded-lg p-1.5 hover:bg-slate-100 lg:hidden"
-                  >
-                    <ArrowLeft className="size-5 text-slate-500" />
-                  </button>
-                  <div className="relative shrink-0">
-                    <div className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary">
-                      {activeConvOther?.role === 'company' ? <Building2 className="size-4" /> : <UserIcon className="size-4" />}
-                    </div>
-                    {activeConv?.onlineStatus?.online && (
-                      <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-white bg-emerald-500" />
+              {/* Context Header with Online/Offline & Typing & Pinned Bar */}
+              <SocialChatHeader
+                activeConv={activeConv}
+                otherUser={activeConvOther}
+                isTyping={isTyping}
+                pinnedMessage={messages.find((m) => m.isPinned)}
+                onUnpin={handlePinMessage}
+              />
+
+              {/* Job Context Bar */}
+              {activeConv.posting && (
+                <div className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                  <div className="flex items-center gap-3 text-xs text-slate-600">
+                    <Briefcase className="size-3.5 shrink-0 text-primary" />
+                    <Link
+                      to={`/${activeConv.postingModel?.toLowerCase() || 'job'}/${activeConv.posting?._id}`}
+                      className="truncate font-semibold text-primary hover:underline"
+                    >
+                      {activeConv.posting.title || 'Position'}
+                    </Link>
+                    {activeConv.application?.status && (
+                      <span className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusStyles[activeConv.application.status] || 'bg-slate-100 text-slate-600'}`}>
+                        {activeConv.application.status}
+                      </span>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-foreground">{activeConvOther?.name || 'Unknown'}</p>
-                    <p className="text-xs text-slate-400">
-                      {activeConv?.onlineStatus?.online
-                        ? 'Online'
-                        : activeConv?.onlineStatus?.lastSeen
-                          ? `Last seen ${timeAgo(activeConv.onlineStatus.lastSeen)}`
-                          : 'Offline'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setShowReportModal(true)}
-                      title="Report conversation"
-                      className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Flag className="size-4" />
-                    </button>
-                    <button
-                      onClick={handleBlock}
-                      title="Block conversation"
-                      className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Ban className="size-4" />
-                    </button>
-                  </div>
                 </div>
+              )}
 
-                {/* Job Context Bar */}
-                {activeConv.posting && (
-                  <div className="border-t border-slate-100 bg-slate-50 px-4 py-2">
-                    <div className="flex items-center gap-3 text-xs text-slate-600">
-                      <Briefcase className="size-3.5 shrink-0 text-primary" />
-                      <Link
-                        to={`/${activeConv.postingModel?.toLowerCase() || 'job'}/${activeConv.posting?._id}`}
-                        className="truncate font-semibold text-primary hover:underline"
-                      >
-                        {activeConv.posting.title || 'Position'}
-                      </Link>
-                      {activeConv.application?.status && (
-                        <span className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusStyles[activeConv.application.status] || 'bg-slate-100 text-slate-600'}`}>
-                          {activeConv.application.status}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Search messages */}
-              <div className="border-b border-slate-200 bg-white px-4 py-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={msgSearchQuery}
-                    onChange={(e) => handleMsgSearch(e.target.value)}
-                    placeholder="Search in this conversation..."
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-8 text-xs outline-none focus:border-primary"
-                  />
-                  {msgSearchQuery && (
-                    <button onClick={() => { handleMsgSearch(''); setShowMsgSearch(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                      <X className="size-3.5" />
-                    </button>
-                  )}
-                </div>
-                {showMsgSearch && (
-                  <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-                    {searchingMsg ? (
-                      <p className="p-2 text-center text-xs text-slate-400">Searching...</p>
-                    ) : msgSearchResults.length === 0 ? (
-                      <p className="p-2 text-center text-xs text-slate-400">No matches found</p>
-                    ) : (
-                      msgSearchResults.map((m) => (
-                        <div key={m._id} className="rounded-lg px-3 py-2 text-xs hover:bg-slate-50">
-                          <p className="font-semibold text-slate-600">{m.sender?.name}</p>
-                          <p className="text-slate-500">{m.text || (m.attachments?.[0]?.name || '')}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Messages */}
+              {/* Messages List */}
               <div className="flex-1 overflow-y-auto bg-slate-50">
                 {msgLoading ? (
                   <div className="flex items-center justify-center p-8">
@@ -556,7 +551,6 @@ export default function Messages() {
                   </div>
                 ) : (
                   <div className="space-y-1 p-4">
-                    {/* Load more */}
                     {hasMore && (
                       <div className="flex justify-center py-2">
                         <button onClick={loadMore} className="text-xs font-semibold text-primary hover:underline">
@@ -587,7 +581,7 @@ export default function Messages() {
                               <div className="flex justify-center py-2">
                                 <div className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-xs text-slate-500">
                                   <Info className="size-3" />
-                                  <span>{msg.systemAction === 'status_change' ? msg.text : msg.text}</span>
+                                  <span>{msg.text}</span>
                                 </div>
                               </div>
                             </div>
@@ -597,60 +591,16 @@ export default function Messages() {
                         return (
                           <div key={msg._id}>
                             {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                            <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                              <div
-                                className={`group max-w-[75%] rounded-2xl px-4 py-2.5 ${
-                                  isMe
-                                    ? 'rounded-br-md bg-primary text-white'
-                                    : 'rounded-bl-md bg-white text-slate-700 shadow-sm'
-                                }`}
-                              >
-                                {msg.attachments?.length > 0 && (
-                                  <div className="mb-1.5 space-y-1">
-                                    {msg.attachments.map((att, i) => (
-                                      <a
-                                        key={i}
-                                        href={att.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold ${
-                                          isMe ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                        }`}
-                                      >
-                                        <Paperclip className="size-3" />
-                                        <span className="truncate">{att.name}</span>
-                                        <ExternalLink className="size-3 shrink-0" />
-                                      </a>
-                                    ))}
-                                  </div>
-                                )}
-                                {msg.text && (
-                                  <p className={`text-sm ${isMe ? 'text-white' : 'text-slate-700'}`}>{msg.text}</p>
-                                )}
-                                {msg.redFlagged && (
-                                  <div className="mt-1 flex items-center gap-1 rounded bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300">
-                                    <AlertTriangle className="size-3" />
-                                    Flagged for review
-                                  </div>
-                                )}
-                                <div className={`mt-1 flex items-center gap-1 ${isMe ? 'justify-end' : ''}`}>
-                                  <span className={`text-[10px] ${isMe ? 'text-white/70' : 'text-slate-400'}`}>
-                                    {formatTime(msg.createdAt)}
-                                  </span>
-                                  {isMe && (
-                                    msg.failed ? (
-                                      <span className="text-[10px] text-rose-300">Failed</span>
-                                    ) : msg.sending ? (
-                                      <span className="text-[10px] text-white/50">Sending...</span>
-                                    ) : (
-                                      msg.readBy?.length > 0
-                                        ? <CheckCheck className="size-3 text-blue-300" />
-                                        : <Check className="size-3 text-white/50" />
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            <SocialMessageBubble
+                              message={msg}
+                              isMe={isMe}
+                              user={user}
+                              onReact={handleReact}
+                              onReply={(m) => setReplyToMessage(m)}
+                              onEdit={handleEditMessage}
+                              onDelete={handleDeleteMessage}
+                              onPin={handlePinMessage}
+                            />
                           </div>
                         )
                       })
@@ -660,13 +610,6 @@ export default function Messages() {
                 )}
               </div>
 
-              {/* Typing Indicator */}
-              {isTyping && (
-                <div className="px-4 py-1 text-xs text-slate-400 italic">
-                  {activeConvOther?.name} is typing...
-                </div>
-              )}
-
               {/* Blocked Notice */}
               {activeConv.status === 'blocked' ? (
                 <div className="border-t border-slate-200 bg-rose-50 px-4 py-3 text-center text-sm font-semibold text-rose-600">
@@ -674,19 +617,32 @@ export default function Messages() {
                 </div>
               ) : (
                 <>
+                  {/* Quoted Reply Banner above Input */}
+                  {replyToMessage && (
+                    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600">
+                      <div className="truncate">
+                        <span className="font-semibold text-primary">Replying to {replyToMessage.sender?.name || 'message'}:</span>{' '}
+                        <span className="italic">{replyToMessage.text || 'Attachment'}</span>
+                      </div>
+                      <button onClick={() => setReplyToMessage(null)} className="p-1 hover:text-rose-500">
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Input */}
                   <div className="border-t border-slate-200 bg-white px-4 py-3">
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
-                        accept=".pdf,.doc,.docx,.png,.jpg"
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp"
                         ref={fileInputRef}
                         className="hidden"
                         onChange={handleFileUpload}
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        title="Attach file"
+                        title="Attach media or file"
                         className="grid size-10 shrink-0 place-items-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-primary"
                       >
                         <Paperclip className="size-4" />
@@ -695,7 +651,7 @@ export default function Messages() {
                         value={text}
                         onChange={(e) => { setText(e.target.value); handleTyping() }}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                        placeholder="Type a message..."
+                        placeholder="Type a message or paste emojis..."
                         className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
                       />
                       <button

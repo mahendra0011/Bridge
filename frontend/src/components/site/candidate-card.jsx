@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
+import { useAuth } from '@/context/AuthContext'
 
 const statusColors = {
   pending: 'bg-amber-50 text-amber-700 ring-amber-200',
@@ -30,6 +31,7 @@ function timeAgo(date) {
 }
 
 export function CandidateCard({ candidate, index = 0, companyId, onUpdate, detailPath }) {
+  const { user: authUser } = useAuth()
   const user = candidate.user || {}
   const name = [candidate.firstName, candidate.lastName].filter(Boolean).join(' ') || user.name || 'Unknown'
   const avatarLetter = name[0].toUpperCase()
@@ -56,7 +58,7 @@ export function CandidateCard({ candidate, index = 0, companyId, onUpdate, detai
   }
 
   const handleMessage = () => {
-    const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
+    const msgBase = authUser?.role === 'company' ? '/company/messages' : authUser?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
     navigate(`${msgBase}?userId=${user._id}`)
   }
 

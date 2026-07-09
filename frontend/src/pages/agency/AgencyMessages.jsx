@@ -9,6 +9,8 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useSocket } from '@/hooks/useSocket'
+import { SocialMessageBubble } from '@/components/chat/SocialMessageBubble'
+import { SocialChatHeader } from '@/components/chat/SocialChatHeader'
 
 function timeAgo(date) {
   if (!date) return ''
@@ -36,11 +38,16 @@ export default function AgencyMessages() {
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [typingUsers, setTypingUsers] = useState(new Set())
+  const [replyToMessage, setReplyToMessage] = useState(null)
   const activeIdRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
+      if (data.sender && String(data.sender._id || data.sender) !== String(user?._id)) {
+        toast.info(`New message from ${data.sender?.name || 'Company'}: ${data.text || 'Attachment'}`, { icon: '💬' })
+      }
       const convId = activeIdRef.current
       if (convId && String(data.conversation || data._id?.conversation) === convId) {
         setMessages((prev) => {
@@ -78,11 +85,12 @@ export default function AgencyMessages() {
     'message:read': useCallback((data) => {
       if (data.conversationId === activeIdRef.current) {
         setMessages((prev) =>
-          prev.map((m) =>
-            data.messageIds.includes(m._id)
-              ? { ...m, readBy: [...(m.readBy || []), data.userId] }
-              : m
-          )
+          prev.map((m) => {
+            if (!data.messageIds.includes(m._id)) return m
+            if (String(m.sender?._id || m.sender) === String(data.userId)) return m
+            if ((m.readBy || []).includes(data.userId)) return m
+            return { ...m, readBy: [...(m.readBy || []), data.userId] }
+          })
         )
       }
     }, []),
@@ -122,9 +130,13 @@ export default function AgencyMessages() {
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
   }, [searchParams, user, setSearchParams])
 
-  useEffect(() => {
-    activeIdRef.current = activeChat?._id || null
-  }, [activeChat])
+useEffect(() => {
+     activeIdRef.current = activeChat?._id || null
+   }, [activeChat])
+
+   useEffect(() => {
+     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+   }, [messages])
 
   const loadMessages = async (chatId) => {
     setPage(1)
@@ -144,7 +156,7 @@ export default function AgencyMessages() {
     const nextPage = page + 1
     try {
       const data = await api.get(`/api/agency/conversations/${activeChat._id}/messages?page=${nextPage}&limit=50`)
-      setMessages(prev => [...prev, ...data.messages])
+      setMessages(prev => [...(data.messages || []), ...prev])
       setPage(nextPage)
       setHasMore(nextPage < data.totalPages)
     } catch (err) {}
@@ -170,12 +182,18 @@ export default function AgencyMessages() {
   const handleSend = async () => {
     if (!newMessage.trim() || !activeChat) return
     setSending(true)
-    const tempMsg = { _id: Date.now(), content: newMessage, sender: user?._id, createdAt: new Date().toISOString(), temp: true }
+    const currentReply = replyToMessage
+    const msgText = newMessage.trim()
+    const tempMsg = { _id: Date.now(), text: msgText, content: msgText, sender: user?._id, createdAt: new Date().toISOString(), temp: true }
     setMessages(prev => [...prev, tempMsg])
     setNewMessage('')
+    setReplyToMessage(null)
     try {
-      const data = await api.post(`/api/agency/conversations/${activeChat._id}/messages`, { text: newMessage.trim() })
-      setMessages(prev => prev.map(m => m._id === tempMsg._id ? data.message || { ...tempMsg, temp: false } : m))
+      const data = await api.post(`/api/agency/conversations/${activeChat._id}/messages`, {
+        text: msgText,
+        replyTo: currentReply ? { messageId: currentReply._id, text: currentReply.text, senderName: currentReply.sender?.name } : undefined,
+      })
+      setMessages(prev => prev.map(m => m._id === tempMsg._id ? (data.message || { ...tempMsg, temp: false }) : m))
       setConversations((prev) =>
         prev.map((c) =>
           c._id === activeChat._id
@@ -186,15 +204,60 @@ export default function AgencyMessages() {
     } catch (err) {
       toast.error('Failed to send')
       setMessages(prev => prev.filter(m => m._id !== tempMsg._id))
-    } finally {
-      setSending(false)
+    } finally { setSending(false) }
+  }
+
+  const handleReact = async (msgId, emoji) => {
+    if (!activeChat) return
+    try {
+      const res = await api.post(`/api/agency/conversations/${activeChat._id}/messages/${msgId}/react`, { emoji })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
+  }
+
+  const handleEditMessage = async (msgId, editText) => {
+    if (!activeChat) return
+    try {
+      const res = await api.patch(`/api/agency/conversations/${activeChat._id}/messages/${msgId}`, { text: editText })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message edited')
+      }
+    } catch {
+      toast.error('Failed to edit message')
     }
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!activeChat) return
+    try {
+      const res = await api.delete(`/api/agency/conversations/${activeChat._id}/messages/${msgId}`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message deleted')
+      }
+    } catch {
+      toast.error('Failed to delete message')
+    }
+  }
+
+  const handlePinMessage = async (msgId) => {
+    if (!activeChat) return
+    try {
+      const res = await api.patch(`/api/agency/conversations/${activeChat._id}/messages/${msgId}/pin`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
   }
 
   const handleTyping = () => {
     if (!activeChat) return
     emit('typing:start', { conversationId: activeChat._id })
-    setTimeout(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
       emit('typing:stop', { conversationId: activeChat._id })
     }, 2000)
   }
@@ -262,22 +325,14 @@ export default function AgencyMessages() {
         {/* Chat Area */}
         {activeChat ? (
           <div className="flex flex-1 flex-col">
-            {/* Chat Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
-              <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                  {(activeChat.participant?.name || otherParticipant(activeChat)?.name || 'U')[0]}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{activeChat.participant?.name || otherParticipant(activeChat)?.name || 'Unknown'}</p>
-                  <p className="text-xs text-slate-500">{activeChat.participant?.email || otherParticipant(activeChat)?.email || ''}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Phone className="size-4" /></button>
-                <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><MoreVertical className="size-4" /></button>
-              </div>
-            </div>
+            {/* Social Chat Header */}
+            <SocialChatHeader
+              activeConv={activeChat}
+              otherUser={otherParticipant(activeChat)}
+              isTyping={isTyping}
+              pinnedMessage={messages.find((m) => m.isPinned)}
+              onUnpin={handlePinMessage}
+            />
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto bg-slate-50/50 p-5 space-y-3">
@@ -289,32 +344,42 @@ export default function AgencyMessages() {
                 messages.map(msg => {
                   const isMe = String(msg.sender?._id || msg.sender) === String(user?._id)
                   return (
-                    <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
-                        isMe ? 'bg-primary text-white rounded-br-md' : 'bg-white border border-slate-200 rounded-bl-md'
-                      }`}>
-                        <p>{msg.text || msg.content}</p>
-                        <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-slate-400'}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
+                    <SocialMessageBubble
+                      key={msg._id}
+                      message={msg}
+                      isMe={isMe}
+                      user={user}
+                      onReact={handleReact}
+                      onReply={(m) => setReplyToMessage(m)}
+                      onEdit={handleEditMessage}
+                      onDelete={handleDeleteMessage}
+                      onPin={handlePinMessage}
+                    />
                   )
                 })
               )}
-              {isTyping && (
-                <div className="px-4 py-1 text-xs text-slate-400 italic">
-                  {otherParticipant(activeChat)?.name} is typing...
-                </div>
-              )}
+              <div ref={messagesEndRef} />
             </div>
+
+            {/* Reply banner above Input */}
+            {replyToMessage && (
+              <div className="flex items-center justify-between border-t border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600">
+                <div className="truncate">
+                  <span className="font-semibold text-primary">Replying to {replyToMessage.sender?.name || 'message'}:</span>{' '}
+                  <span className="italic">{replyToMessage.text || 'Attachment'}</span>
+                </div>
+                <button onClick={() => setReplyToMessage(null)} className="p-1 hover:text-rose-500">
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Chat Input */}
             <div className="border-t border-slate-200 bg-white p-4">
               <div className="flex items-center gap-2">
                 <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Paperclip className="size-5" /></button>
                 <input value={newMessage} onChange={e => { setNewMessage(e.target.value); handleTyping() }}
-                  placeholder="Type a message..."
+                  placeholder="Type a message or paste emojis..."
                   className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} />
                 <button onClick={handleSend} disabled={!newMessage.trim() || sending}

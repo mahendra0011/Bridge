@@ -5,7 +5,7 @@ const conversationSchema = new mongoose.Schema({
   application:  { type: mongoose.Schema.Types.ObjectId, ref: 'Application' },
   posting:      { type: mongoose.Schema.Types.ObjectId, refPath: 'postingModel' },
   postingModel: { type: String, enum: ['Job', 'Internship', 'Opportunity'] },
-  initiatedBy:  { type: String, enum: ['candidate', 'recruiter', 'system'], default: 'recruiter' },
+  initiatedBy:  { type: String, enum: ['candidate', 'recruiter', 'agency', 'system'], default: 'recruiter' },
   status:       { type: String, enum: ['active', 'archived', 'blocked'], default: 'active' },
   lastMessage:  { type: String },
   lastSender:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

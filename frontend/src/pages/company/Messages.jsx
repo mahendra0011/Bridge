@@ -10,6 +10,8 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useSocket } from '@/hooks/useSocket'
+import { SocialMessageBubble } from '@/components/chat/SocialMessageBubble'
+import { SocialChatHeader } from '@/components/chat/SocialChatHeader'
 
 const STATUTES = ['Shortlisted', 'Interview Scheduled', 'Offered', 'Rejected', 'Hired']
 
@@ -81,6 +83,7 @@ export default function CompanyMessages() {
   const [msgSearchResults, setMsgSearchResults] = useState([])
   const [showMsgSearch, setShowMsgSearch] = useState(false)
   const [searchingMsg, setSearchingMsg] = useState(false)
+  const [replyToMessage, setReplyToMessage] = useState(null)
   const messagesEndRef = useRef(null)
   const activeIdRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -91,6 +94,9 @@ export default function CompanyMessages() {
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
+      if (data.sender && String(data.sender._id || data.sender) !== String(user?._id)) {
+        toast.info(`New message from ${data.sender?.name || 'Candidate'}: ${data.text || 'Attachment'}`, { icon: '💬' })
+      }
       const convId = activeIdRef.current
       if (convId && String(data.conversation) === convId) {
         setMessages((prev) => {
@@ -121,9 +127,14 @@ export default function CompanyMessages() {
     }, []),
     'message:read': useCallback((data) => {
       if (data.conversationId === activeIdRef.current) {
-        setMessages((prev) => prev.map((m) =>
-          data.messageIds.includes(m._id) ? { ...m, readBy: [...(m.readBy || []), data.userId] } : m
-        ))
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (!data.messageIds.includes(m._id)) return m
+            if (String(m.sender?._id || m.sender) === String(data.userId)) return m
+            if ((m.readBy || []).includes(data.userId)) return m
+            return { ...m, readBy: [...(m.readBy || []), data.userId] }
+          })
+        )
       }
     }, []),
     'unread:update': useCallback((data) => {
@@ -205,9 +216,14 @@ export default function CompanyMessages() {
     const msgText = (overrideText || text).trim()
     if (!msgText || sending) return
     setSending(true)
+    const currentReply = replyToMessage
     if (!overrideText) setText('')
+    setReplyToMessage(null)
     try {
-      const data = await api.post(`/api/company/conversations/${activeConv._id}/messages`, { text: msgText })
+      const data = await api.post(`/api/company/conversations/${activeConv._id}/messages`, {
+        text: msgText,
+        replyTo: currentReply ? { messageId: currentReply._id, text: currentReply.text, senderName: currentReply.sender?.name } : undefined,
+      })
       setMessages((prev) => [...prev, data.message])
       setConversations((prev) =>
         prev.map((c) => c._id === activeConv._id
@@ -221,6 +237,52 @@ export default function CompanyMessages() {
       setSending(false)
       setShowCanned(false)
     }
+  }
+
+  const handleReact = async (msgId, emoji) => {
+    if (!activeConv) return
+    try {
+      const res = await api.post(`/api/company/conversations/${activeConv._id}/messages/${msgId}/react`, { emoji })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
+  }
+
+  const handleEditMessage = async (msgId, editText) => {
+    if (!activeConv) return
+    try {
+      const res = await api.patch(`/api/company/conversations/${activeConv._id}/messages/${msgId}`, { text: editText })
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message edited')
+      }
+    } catch {
+      toast.error('Failed to edit message')
+    }
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!activeConv) return
+    try {
+      const res = await api.delete(`/api/company/conversations/${activeConv._id}/messages/${msgId}`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+        toast.success('Message deleted')
+      }
+    } catch {
+      toast.error('Failed to delete message')
+    }
+  }
+
+  const handlePinMessage = async (msgId) => {
+    if (!activeConv) return
+    try {
+      const res = await api.patch(`/api/company/conversations/${activeConv._id}/messages/${msgId}/pin`)
+      if (res.message) {
+        setMessages((prev) => prev.map((m) => (m._id === msgId ? res.message : m)))
+      }
+    } catch {}
   }
 
   const handleMsgSearch = async (q) => {
@@ -408,28 +470,13 @@ export default function CompanyMessages() {
           ) : (
             <>
               {/* Context Header */}
-              <div className="border-b border-slate-200 bg-white">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <button onClick={() => setActiveConv(null)} className="rounded-lg p-1.5 hover:bg-slate-100 lg:hidden">
-                    <ArrowLeft className="size-5 text-slate-500" />
-                  </button>
-                  <div className="relative shrink-0">
-                    <div className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary">
-                      <UserIcon className="size-4" />
-                    </div>
-                    {activeConv?.onlineStatus?.online && <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-white bg-emerald-500" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-foreground">{activeConvOther?.name || 'Unknown'}</p>
-                    <p className="text-xs text-slate-400">
-                      {activeConv?.onlineStatus?.online ? 'Online' : activeConv?.onlineStatus?.lastSeen ? `Last seen ${timeAgo(activeConv.onlineStatus.lastSeen)}` : 'Offline'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => setShowReportModal(true)} title="Report" className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Flag className="size-4" /></button>
-                    <button onClick={handleBlock} title="Block" className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Ban className="size-4" /></button>
-                  </div>
-                </div>
+              <SocialChatHeader
+                activeConv={activeConv}
+                otherUser={activeConvOther}
+                isTyping={isTyping}
+                pinnedMessage={messages.find((m) => m.isPinned)}
+                onUnpin={handlePinMessage}
+              />
 
                 {/* Job Context Bar */}
                 {activeConv.posting && (
@@ -463,7 +510,6 @@ export default function CompanyMessages() {
                     ))}
                   </div>
                 )}
-              </div>
 
               {/* Search messages */}
               <div className="border-b border-slate-200 bg-white px-4 py-2">
@@ -539,34 +585,16 @@ export default function CompanyMessages() {
                         return (
                           <div key={msg._id}>
                             {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                            <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`group max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md bg-white text-slate-700 shadow-sm'}`}>
-                                {msg.attachments?.length > 0 && (
-                                  <div className="mb-1.5 space-y-1">
-                                    {msg.attachments.map((att, i) => (
-                                      <a key={i} href={att.url} target="_blank" rel="noopener noreferrer"
-                                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold ${isMe ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                                        <Paperclip className="size-3" /><span className="truncate">{att.name}</span><ExternalLink className="size-3 shrink-0" />
-                                      </a>
-                                    ))}
-                                  </div>
-                                )}
-                                {msg.text && <p className={`text-sm ${isMe ? 'text-white' : 'text-slate-700'}`}>{msg.text}</p>}
-                                {msg.redFlagged && (
-                                  <div className="mt-1 flex items-center gap-1 rounded bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300">
-                                    <AlertTriangle className="size-3" /> Flagged
-                                  </div>
-                                )}
-                                <div className={`mt-1 flex items-center gap-1 ${isMe ? 'justify-end' : ''}`}>
-                                  <span className={`text-[10px] ${isMe ? 'text-white/70' : 'text-slate-400'}`}>{formatTime(msg.createdAt)}</span>
-                                  {isMe && (
-                                    msg.readBy?.length > 0
-                                      ? <CheckCheck className="size-3 text-blue-300" />
-                                      : <Check className="size-3 text-white/50" />
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            <SocialMessageBubble
+                              message={msg}
+                              isMe={isMe}
+                              user={user}
+                              onReact={handleReact}
+                              onReply={(m) => setReplyToMessage(m)}
+                              onEdit={handleEditMessage}
+                              onDelete={handleDeleteMessage}
+                              onPin={handlePinMessage}
+                            />
                           </div>
                         )
                       })
@@ -576,12 +604,22 @@ export default function CompanyMessages() {
                 )}
               </div>
 
-              {isTyping && <div className="px-4 py-1 text-xs text-slate-400 italic">{activeConvOther?.name} is typing...</div>}
-
               {activeConv.status === 'blocked' ? (
                 <div className="border-t border-slate-200 bg-rose-50 px-4 py-3 text-center text-sm font-semibold text-rose-600">This conversation has been blocked</div>
               ) : (
-                <div className="border-t border-slate-200 bg-white px-4 py-3">
+                <>
+                  {replyToMessage && (
+                    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600">
+                      <div className="truncate">
+                        <span className="font-semibold text-primary">Replying to {replyToMessage.sender?.name || 'message'}:</span>{' '}
+                        <span className="italic">{replyToMessage.text || 'Attachment'}</span>
+                      </div>
+                      <button onClick={() => setReplyToMessage(null)} className="p-1 hover:text-rose-500">
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="border-t border-slate-200 bg-white px-4 py-3">
                   <div className="flex items-center gap-2">
                     <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" ref={fileInputRef} className="hidden" onChange={async (e) => {
                       const file = e.target.files[0]
@@ -594,10 +632,20 @@ export default function CompanyMessages() {
                         const res = await api.post('/api/company/documents/upload', fd, { isFormData: true })
                         const url = res.documents?.[res.documents.length - 1]?.url
                         if (url) {
-                          await api.post(`/api/company/conversations/${activeConv._id}/messages`, {
+                          const data = await api.post(`/api/company/conversations/${activeConv._id}/messages`, {
                             text: `Sent: ${file.name}`,
                             attachments: [{ name: file.name, url, type: file.type.includes('resume') ? 'resume' : 'other' }],
                           })
+                          if (data?.message) {
+                            setMessages((prev) => [...prev, data.message])
+                            setConversations((prev) =>
+                              prev.map((c) =>
+                                c._id === activeConv._id
+                                  ? { ...c, lastMessage: data.message.text, lastMessageAt: data.message.createdAt, lastSender: user._id }
+                                  : c
+                              )
+                            )
+                          }
                         }
                         toast.success('File sent')
                       } catch (err) { toast.error(err.message || 'Upload failed') }
@@ -653,10 +701,10 @@ export default function CompanyMessages() {
                     </button>
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Report Modal */}

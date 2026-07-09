@@ -231,7 +231,8 @@ async function notifyViaEmailIfOffline(io, recipientId, senderName, conversation
       if (digest !== 'instant') return
     }
 
-    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/messages/${conversationId}`
+    const path = recipient.role === 'student' ? '/dashboard/messages' : `/${recipient.role}/messages`
+    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
     const content = newMessageEmail(recipient.name, senderName, link)
     await sendEmail({ to: recipient.email, ...content })
   } catch {} // silently fail — email is best-effort
@@ -244,18 +245,28 @@ router.get('/conversations', protect, async (req, res) => {
       .populate('participants', 'name email role')
       .populate('posting', 'title')
       .populate('application', 'status')
-      .sort('-lastMessageAt')
+      .sort('-lastMessageAt -updatedAt')
 
     const io = req.app.get('io')
-    const enriched = conversations.map((conv) => {
-      const obj = conv.toObject()
+    const seenKeys = new Set()
+    const enriched = []
+    for (const conv of conversations) {
+      if (!conv.lastMessage || !conv.lastMessage.trim()) continue
       const other = conv.participants.find((p) => String(p._id) !== String(req.user._id))
-      if (other && io) {
+      if (!other) continue
+      const key = conv.posting
+        ? `posting_${conv.posting._id || conv.posting}_${other._id}`
+        : `direct_${other._id}`
+      if (seenKeys.has(key)) continue
+      seenKeys.add(key)
+
+      const obj = conv.toObject()
+      if (io) {
         obj.onlineStatus = io.getOnlineStatus(String(other._id))
       }
       obj.unreadCount = conv.unreadCount?.get(String(req.user._id)) || 0
-      return obj
-    })
+      enriched.push(obj)
+    }
 
     res.json({ conversations: enriched })
   } catch (err) { res.status(500).json({ message: err.message }) }
@@ -395,8 +406,9 @@ router.post('/conversations/direct', protect, async (req, res) => {
     // Check if conversation already exists between these two users
     let conv = await Conversation.findOne({
       participants: { $all: [req.user._id, userId], $size: 2 },
-      posting: { $exists: false },
+      $or: [{ posting: { $exists: false } }, { posting: null }],
     })
+      .sort('-lastMessageAt -updatedAt')
       .populate('participants', 'name email role')
       .populate('posting', 'title')
 
@@ -557,11 +569,13 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
       })
       const otherId = conv.participants.find((p) => String(p) !== String(req.user._id))
       if (otherId) {
+        const otherUser = await User.findById(otherId).select('role')
+        const linkPath = otherUser?.role === 'student' ? '/dashboard/messages' : '/company/messages'
         io.sendNotification(String(otherId), {
           title: 'New Message',
           message: `${req.user.name} sent you a message`,
           icon: '💬',
-          link: `/company/messages/${req.params.id}`,
+          link: linkPath,
         })
         notifyViaEmailIfOffline(io, otherId, req.user.name, req.params.id)
       }
@@ -593,6 +607,12 @@ router.post('/conversations/:id/read', protect, async (req, res) => {
     res.json({ message: 'Messages marked as read' })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
+
+const { reactToMessage, editMessage, deleteMessage, pinMessage } = require('../controllers/messageActions')
+router.post('/conversations/:id/messages/:msgId/react', protect, reactToMessage)
+router.patch('/conversations/:id/messages/:msgId', protect, editMessage)
+router.delete('/conversations/:id/messages/:msgId', protect, deleteMessage)
+router.patch('/conversations/:id/messages/:msgId/pin', protect, pinMessage)
 
 // POST /api/student/conversations/:id/block
 router.post('/conversations/:id/block', protect, async (req, res) => {
@@ -845,6 +865,9 @@ router.get('/open-to-work/status', async (req, res) => {
       videoUrl: profile.videoUrl,
       linksVerified: profile.linksVerified,
       lastActive: profile.lastActive,
+      bio: profile.bio || '',
+      skills: profile.skills || [],
+      preferredMode: profile.preferredMode || profile.jobPreferences?.preferredWorkMode || 'any',
     })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })

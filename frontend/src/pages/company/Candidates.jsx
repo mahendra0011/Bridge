@@ -75,6 +75,14 @@ export default function Candidates() {
     setFilters({ q: '', skills: '', location: '', openTo: '', relocate: '', sort: '-lastActive' })
   }
 
+  const goToPage = (p) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', p)
+      return next
+    })
+  }
+
   const hasFilters = Object.values(filters).some((v) => v && v !== '-lastActive')
 
   const handleUpdateCandidate = (updated) => {
@@ -240,7 +248,7 @@ export default function Candidates() {
         {totalPages > 1 && (
           <div className="mt-8 flex items-center justify-center gap-2">
             <button
-              onClick={() => fetchCandidates(page - 1)}
+              onClick={() => goToPage(page - 1)}
               disabled={page <= 1}
               className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
             >
@@ -249,7 +257,7 @@ export default function Candidates() {
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
               <button
                 key={p}
-                onClick={() => fetchCandidates(p)}
+                onClick={() => goToPage(p)}
                 className={`grid size-9 place-items-center rounded-lg text-sm font-bold transition-all ${
                   p === page
                     ? 'bg-primary text-white'
@@ -260,7 +268,7 @@ export default function Candidates() {
               </button>
             ))}
             <button
-              onClick={() => fetchCandidates(page + 1)}
+              onClick={() => goToPage(page + 1)}
               disabled={page >= totalPages}
               className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
             >

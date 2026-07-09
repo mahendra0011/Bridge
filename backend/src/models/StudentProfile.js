@@ -59,6 +59,7 @@ const studentProfileSchema = new mongoose.Schema({
   noticePeriod:    { type: String },
   expectedCTC:     { type: String },
   hideFromCurrentEmployer: { type: Boolean, default: false },
+  preferredMode:   { type: String },
   lastActive:      { type: Date },
 
   // Projects

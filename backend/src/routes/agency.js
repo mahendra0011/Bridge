@@ -803,8 +803,9 @@ router.post('/conversations/direct', protect, restrictTo('agency'), async (req, 
     // Find existing conversation or create new one
     let conv = await Conversation.findOne({
       participants: { $all: [req.user._id, userId], $size: 2 },
-      posting: { $exists: false },
+      $or: [{ posting: { $exists: false } }, { posting: null }],
     })
+      .sort('-lastMessageAt -updatedAt')
       .populate('participants', 'name email role')
 
     if (conv) {
@@ -842,25 +843,35 @@ router.get('/conversations', protect, restrictTo('agency'), async (req, res) => 
       .populate('participants', 'name email')
       .populate('posting', 'title')
       .populate('application', 'status')
-      .sort('-lastMessageAt')
+      .sort('-lastMessageAt -updatedAt')
       .lean()
 
     const io = req.app.get('io')
-    const formatted = conversations.map(c => {
-const other = c.participants.find(p => String(p._id) !== String(req.user._id))
-       return {
-         _id: c._id,
-         participant: other,
-         participants: c.participants,
-         lastMessage: c.lastMessage || (c.lastMessage?.content ? c.lastMessage.content : ''),
-         lastMessageAt: c.lastMessageAt || c.updatedAt,
-         unread: c.unreadCount?.get(String(req.user._id)) || 0,
-         unreadCount: c.unreadCount?.get(String(req.user._id)) || 0,
-         posting: c.posting,
-         application: c.application,
-         onlineStatus: other && io ? io.getOnlineStatus(String(other._id)) : { online: false, lastSeen: null },
-       }
-    })
+    const seenKeys = new Set()
+    const formatted = []
+    for (const c of conversations) {
+      if (!c.lastMessage || !c.lastMessage.trim()) continue
+      const other = c.participants.find(p => String(p._id) !== String(req.user._id))
+      if (!other) continue
+      const key = c.posting
+        ? `posting_${c.posting._id || c.posting}_${other._id}`
+        : `direct_${other._id}`
+      if (seenKeys.has(key)) continue
+      seenKeys.add(key)
+
+      formatted.push({
+        _id: c._id,
+        participant: other,
+        participants: c.participants,
+        lastMessage: c.lastMessage || '',
+        lastMessageAt: c.lastMessageAt || c.updatedAt,
+        unread: c.unreadCount?.get(String(req.user._id)) || 0,
+        unreadCount: c.unreadCount?.get(String(req.user._id)) || 0,
+        posting: c.posting,
+        application: c.application,
+        onlineStatus: other && io ? io.getOnlineStatus(String(other._id)) : { online: false, lastSeen: null },
+      })
+    }
     res.json({ conversations: formatted })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -914,7 +925,7 @@ router.post('/conversations/:id/messages', protect, restrictTo('agency'), async 
       return res.status(400).json({ message: 'Message content or attachment required' })
     }
 
-    const conversation = await Conversation.findById(req.params.id)
+    const conversation = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conversation) return res.status(404).json({ message: 'Conversation not found' })
     if (conversation.status === 'blocked') return res.status(403).json({ message: 'Conversation is blocked' })
 
@@ -976,6 +987,37 @@ router.post('/conversations/:id/messages', protect, restrictTo('agency'), async 
     res.status(500).json({ message: err.message })
   }
 })
+
+// ─── Messages: Mark conversation as read ───────────────────────────────────
+router.post('/conversations/:id/read', protect, restrictTo('agency'), async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+
+    await Message.updateMany(
+      { conversation: req.params.id, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
+      { $addToSet: { readBy: req.user._id } }
+    )
+
+    conv.unreadCount.set(String(req.user._id), 0)
+    await conv.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.sendUnreadUpdate(String(req.user._id), String(req.params.id), 0)
+    }
+
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+const { reactToMessage, editMessage, deleteMessage, pinMessage } = require('../controllers/messageActions')
+router.post('/conversations/:id/messages/:msgId/react', protect, restrictTo('agency'), reactToMessage)
+router.patch('/conversations/:id/messages/:msgId', protect, restrictTo('agency'), editMessage)
+router.delete('/conversations/:id/messages/:msgId', protect, restrictTo('agency'), deleteMessage)
+router.patch('/conversations/:id/messages/:msgId/pin', protect, restrictTo('agency'), pinMessage)
 
 // ─── Support Tickets ─────────────────────────────────────────────────────────
 router.get('/tickets', protect, restrictTo('agency'), async (req, res) => {

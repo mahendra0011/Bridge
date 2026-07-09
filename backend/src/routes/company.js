@@ -412,10 +412,10 @@ router.get('/dashboard', async (req, res) => {
       Application.countDocuments({ posting: { $in: allPostingIds }, status: 'Interview Scheduled' }),
       Application.countDocuments({ posting: { $in: allPostingIds }, status: 'Offered' }),
       Application.countDocuments({ posting: { $in: allPostingIds }, status: 'Hired' }),
-      Internship.aggregate([{ $match: { company: company._id } }, { $group: { _id: null, total: { $sum: '$views' } } }])
+      Internship.aggregate([{ $match: { company: req.company._id } }, { $group: { _id: null, total: { $sum: '$views' } } }])
         .then(r => r[0]?.total || 0)
         .then(async (v) => {
-          const jv = await Job.aggregate([{ $match: { company: company._id } }, { $group: { _id: null, total: { $sum: '$views' } } }])
+          const jv = await Job.aggregate([{ $match: { company: req.company._id } }, { $group: { _id: null, total: { $sum: '$views' } } }])
           return v + (jv[0]?.total || 0)
         }),
     ])
@@ -798,7 +798,8 @@ async function notifyViaEmailIfOffline(io, recipientId, senderName, conversation
       if (digest !== 'instant') return
     }
 
-    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/messages/${conversationId}`
+    const path = recipient.role === 'student' ? '/dashboard/messages' : `/${recipient.role}/messages`
+    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
     const content = newMessageEmail(recipient.name, senderName, link)
     await sendEmail({ to: recipient.email, ...content })
   } catch {} // silently fail — email is best-effort
@@ -811,18 +812,28 @@ router.get('/conversations', checkPermission('view_messages'), async (req, res) 
       .populate('participants', 'name email role')
       .populate('posting', 'title')
       .populate('application', 'status')
-      .sort('-lastMessageAt')
+      .sort('-lastMessageAt -updatedAt')
 
     const io = req.app.get('io')
-    const enriched = conversations.map((conv) => {
-      const obj = conv.toObject()
+    const seenKeys = new Set()
+    const enriched = []
+    for (const conv of conversations) {
+      if (!conv.lastMessage || !conv.lastMessage.trim()) continue
       const other = conv.participants.find((p) => String(p._id) !== String(req.user._id))
-      if (other && io) {
+      if (!other) continue
+      const key = conv.posting
+        ? `posting_${conv.posting._id || conv.posting}_${other._id}`
+        : `direct_${other._id}`
+      if (seenKeys.has(key)) continue
+      seenKeys.add(key)
+
+      const obj = conv.toObject()
+      if (io) {
         obj.onlineStatus = io.getOnlineStatus(String(other._id))
       }
       obj.unreadCount = conv.unreadCount?.get(String(req.user._id)) || 0
-      return obj
-    })
+      enriched.push(obj)
+    }
 
     res.json({ conversations: enriched })
   } catch (err) { res.status(500).json({ message: err.message }) }
@@ -978,8 +989,9 @@ router.post('/conversations/direct', checkPermission('send_messages'), async (re
 
     let conv = await Conversation.findOne({
       participants: { $all: [req.user._id, userId], $size: 2 },
-      posting: { $exists: false },
+      $or: [{ posting: { $exists: false } }, { posting: null }],
     })
+      .sort('-lastMessageAt -updatedAt')
       .populate('participants', 'name email role')
 
     if (conv) {
@@ -1054,8 +1066,8 @@ router.post('/conversations/:convId/messages', checkPermission('send_messages'),
       if (otherId) {
         const unread = conv.unreadCount.get(String(otherId)) || 0
         io.sendUnreadUpdate(String(otherId), String(conv._id), unread)
+        notifyViaEmailIfOffline(io, String(otherId), req.user.name, conv._id)
       }
-      notifyViaEmailIfOffline(io, String(otherId), req.user.name, conv._id)
     }
 
     res.status(201).json({ message: populated })
@@ -1084,6 +1096,12 @@ router.post('/conversations/:convId/read', checkPermission('view_messages'), asy
     res.json({ message: 'Messages marked as read' })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
+
+const { reactToMessage, editMessage, deleteMessage, pinMessage } = require('../controllers/messageActions')
+router.post('/conversations/:id/messages/:msgId/react', checkPermission('send_messages'), reactToMessage)
+router.patch('/conversations/:id/messages/:msgId', checkPermission('send_messages'), editMessage)
+router.delete('/conversations/:id/messages/:msgId', checkPermission('send_messages'), deleteMessage)
+router.patch('/conversations/:id/messages/:msgId/pin', checkPermission('send_messages'), pinMessage)
 
 // POST /api/company/conversations/:convId/block
 router.post('/conversations/:convId/block', checkPermission('send_messages'), async (req, res) => {
