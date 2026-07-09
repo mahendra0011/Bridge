@@ -1,30 +1,3 @@
-// Change 155
-// Change 143
-// Change 131
-// Change 119
-// Change 107
-// Change 95
-// Change 83
-// Change 71
-// Change 59
-// Change 47
-// Change 35
-// Change 23
-// Change 11
-// Update 167
-// Update 155
-// Update 143
-// Update 131
-// Update 119
-// Update 107
-// Update 95
-// Update 83
-// Update 71
-// Update 59
-// Update 47
-// Update 35
-// Update 23
-// Update 11
 require('dotenv').config()
 const dns = require('dns')
 dns.setServers(['1.1.1.1', '8.8.8.8'])
@@ -39,8 +12,9 @@ const rateLimit = require('express-rate-limit')
 const passport = require('passport')
 const cookieParser = require('cookie-parser')
 const mongoSanitize = require('express-mongo-sanitize')
+const hpp = require('hpp')
 const { csrfProtection } = require('./middleware/csrf')
-require('./utils/passport') // Google OAuth strategy
+require('./utils/passport')
 const { resolveMongoUri } = require('./utils/mongoConnection')
 
 const app = express()
@@ -107,9 +81,35 @@ if (isProduction) {
     next()
   })
 }
-app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }))
+// CORS - strict mode with exact origin matching
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGIN === '*' || (Array.isArray(ALLOWED_ORIGIN) && ALLOWED_ORIGIN.includes(origin))) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true
+}
+app.use(cors(corsOptions))
 app.use(express.json())
 app.use(mongoSanitize()) // NoSQL injection prevention
+app.use(hpp()) // HTTP Parameter Pollution prevention
+// XSS sanitization for string inputs in production
+if (isProduction) {
+  const sanitizeHtml = require('sanitize-html')
+  app.use((req, res, next) => {
+    if (req.body && typeof req.body === 'object') {
+      for (const key in req.body) {
+        if (typeof req.body[key] === 'string') {
+          req.body[key] = sanitizeHtml(req.body[key], { allowedTags: [], allowedAttributes: {} })
+        }
+      }
+    }
+    next()
+  })
+}
 app.use(cookieParser())
 // Serve uploaded files. Use an absolute path so the server works correctly
 // no matter which directory `node` is invoked from.
@@ -126,6 +126,25 @@ app.use('/api', rateLimit({
 
 // Health check — used by Render and load balancers
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
+
+// CSRF token endpoint (public - for unauthenticated forms)
+const { generateCsrfToken } = require('./middleware/csrf')
+app.get('/api/csrf-token', generateCsrfToken, (req, res) => {
+  res.json({ csrfToken: res.locals.csrfToken })
+})
+
+// Security status endpoint (admin monitoring)
+app.get('/api/security-status', require('./middleware/auth').protect, require('./middleware/auth').restrictTo('admin'), (req, res) => {
+  res.json({
+    rateLimitActive: true,
+    csrfActive: isProduction,
+    mongoSanitizeActive: true,
+    hppActive: true,
+    httpsEnforced: isProduction,
+    hstsActive: isProduction,
+    cspActive: isProduction
+  })
+})
 
 // Routes
 app.use('/api/auth',        require('./routes/auth'))
