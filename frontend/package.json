@@ -1,49 +1,3 @@
-// Change 157 - Adding index files
-// Change 148 - Improving mock data
-// Change 139 - Adding request logging
-// Change 130 - Fixing permission leak
-// Change 121 - Adding proper headers
-// Change 112 - Improving SEO meta tags
-// Change 103 - Adding offline support
-// Change 94 - Fixing button states
-// Change 85 - Adding drag and drop support
-// Change 76 - Improving real-time updates
-// Change 67 - Adding better state management
-// Change 58 - Fixing minor UI glitch
-// Change 49 - Added CSRF protection
-// Change 40 - Added security headers to responses
-// Change 31 - Resolved database connection issue
-// Change 22 - Added internship posting feature
-// Change 13 - Better error messages for API responses
-// Change 4 - Modified rate limiting settings for API
-// Change 148
-// Change 136
-// Change 124
-// Change 112
-// Change 100
-// Change 88
-// Change 76
-// Change 64
-// Change 52
-// Change 40
-// Change 28
-// Change 16
-// Change 4
-// Update 172
-// Update 160
-// Update 148
-// Update 136
-// Update 124
-// Update 112
-// Update 100
-// Update 88
-// Update 76
-// Update 64
-// Update 52
-// Update 40
-// Update 28
-// Update 16
-// Update 4
 {
   "name": "bridge-app",
   "private": true,
@@ -55,7 +9,7 @@
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@radix-ui/react-slot": "^1.1.0",
@@ -82,49 +36,3 @@
     "vite": "^5.4.10"
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
