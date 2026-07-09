@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { GraduationCap, Building2, Scale, ArrowUpRight } from 'lucide-react'
 
 const colIcons = {
@@ -33,6 +33,11 @@ function FooterCol({ title, links }) {
 }
 
 export function Footer() {
+  const location = useLocation()
+  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/company') || location.pathname.startsWith('/agency')
+  
+  if (isDashboard) return null
+  
   return (
     <footer className="relative border-t border-slate-100 bg-gradient-to-b from-slate-50 to-white px-4 py-12 sm:px-6 sm:py-20">
       <div className="pointer-events-none absolute inset-0">

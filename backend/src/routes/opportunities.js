@@ -140,7 +140,7 @@ router.get('/:id', async (req, res) => {
 })
 
 // POST /api/opportunities — Create an opportunity (80% profile completion check)
-const { protect } = require('../middleware/auth')
+const { protect, restrictTo } = require('../middleware/auth')
 
 // Helper: calculate profile completion percentage for a user
 function getProfileCompletion(user) {
@@ -231,7 +231,7 @@ router.post('/', protect, async (req, res) => {
 // POST /api/opportunities/:id/apply — Apply to an opportunity
 const Application = require('../models/Application')
 const { uploadApplyFiles } = require('../middleware/upload')
-router.post('/:id/apply', protect, (req, res) => {
+router.post('/:id/apply', protect, restrictTo('student'), (req, res) => {
   uploadApplyFiles(req, res, async (err) => {
     if (err) return res.status(400).json({ message: err.message || 'File upload error' })
     try {
@@ -280,7 +280,7 @@ router.post('/:id/apply', protect, (req, res) => {
       const msg = await Message.create({
         conversation: conv._id,
         sender: req.user._id,
-        senderRole: 'student',
+        senderRole: req.user.role || 'student',
         messageType: 'text',
         text: messageContent,
         readBy: [req.user._id],

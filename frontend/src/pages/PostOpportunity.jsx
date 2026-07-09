@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Plus, AlertTriangle, X, Check, ArrowLeft, Trash2
+  Plus, AlertTriangle, X, Check, ArrowLeft, Trash2, FileText,
+  TrendingUp, Briefcase, Users, ShieldCheck, MessageCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
@@ -206,30 +207,48 @@ export default function PostOpportunity() {
       <div className="flex gap-2">
         <input value={value} onChange={onChange} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), onAdd())}
           placeholder={placeholder} disabled={disabled}
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary" />
-        <Button type="button" onClick={onAdd} disabled={disabled} size="sm"><Plus className="size-4" /></Button>
+          className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary" />
+        <Button type="button" onClick={onAdd} disabled={disabled} size="sm" className="rounded-xl"><Plus className="size-4" /></Button>
       </div>
     </div>
   )
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-primary">
-            <ArrowLeft className="size-4" /> Back
-          </button>
-          <h1 className="text-2xl font-extrabold">{editOpportunityId ? 'Edit Opportunity' : 'Post Opportunity'}</h1>
+      <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        {/* Header Banner */}
+        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-white p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="grid size-10 place-items-center rounded-xl bg-primary/10">
+              <Plus className="size-5 text-primary" />
+            </div>
+            <h1 className="text-2xl font-extrabold tracking-tight">
+              {editOpportunityId ? 'Edit Opportunity' : 'Post Opportunity'}
+            </h1>
+          </div>
+          <p className="text-sm text-slate-500">
+            {editOpportunityId 
+              ? 'Update your opportunity details'
+              : 'Fill in the details below to create your opportunity listing'}
+          </p>
         </div>
 
         {!canPost && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="size-5 shrink-0 text-amber-600 mt-0.5" />
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="size-6 shrink-0 text-amber-600 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-amber-800">ID Verification Required</p>
-                <p className="mt-1 text-xs text-amber-700">Verify your ID to post opportunities and build trust with applicants.</p>
-                <Button onClick={() => navigate('/profile?tab=verification')} size="sm" className="mt-3">Verify Now</Button>
+                <p className="mt-1 text-xs text-amber-700">
+                  Verify your ID to post opportunities and build trust with applicants.
+                </p>
+                <Button 
+                  onClick={() => navigate('/profile?tab=verification')} 
+                  size="sm" 
+                  className="mt-3 rounded-lg"
+                >
+                  Verify Now
+                </Button>
               </div>
             </div>
           </div>
@@ -237,90 +256,96 @@ export default function PostOpportunity() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* ═══ Basic Info ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Basic Information</h2>
-
-            <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Title *</label>
-              <input value={title} onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. Need video editor for YouTube channel"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <FileText className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Basic Information</h2>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Description *</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Title *</label>
+              <input value={title} onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Need video editor for YouTube channel"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Description *</label>
               <textarea rows={5} value={description} onChange={e => setDescription(e.target.value)}
                 placeholder="Describe what you're looking for, responsibilities, requirements..."
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary resize-none transition-colors" disabled={!canPost} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Opportunity Type</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Opportunity Type</label>
                 <select value={opportunityType} onChange={e => setOpportunityType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                   {OPPORTUNITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Work Mode</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Work Mode</label>
                 <select value={mode} onChange={e => setMode(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                   {MODES.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Role / Skills Needed</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Role / Skills Needed</label>
               <input value={role} onChange={e => setRole(e.target.value)}
                 placeholder="e.g. Video Editor, Content Writer, UI Designer"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Location</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Location</label>
                 <input value={locationVal} onChange={e => setLocationVal(e.target.value)}
                   placeholder="e.g. Remote, Mumbai, Bangalore"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">People Needed</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">People Needed</label>
                 <input type="number" min={1} value={peopleNeeded} onChange={e => setPeopleNeeded(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Experience Level</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Experience Level</label>
               <select value={experienceLevel} onChange={e => setExperienceLevel(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                 {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
           </div>
 
           {/* ═══ Skills & Tools ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Skills & Tools</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Briefcase className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Skills & Tools</h2>
+            </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Required Skills</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Required Skills</label>
               <ChipInput items={skills} onRemove={removeSkill} value={newSkill}
                 onChange={e => setNewSkill(e.target.value)} onAdd={addSkill}
                 placeholder="Add a required skill and press Enter" disabled={!canPost} />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Required Tools & Software</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Required Tools & Software</label>
               <ChipInput items={tools} onRemove={removeTool} value={newTool}
                 onChange={e => setNewTool(e.target.value)} onAdd={addTool}
                 placeholder="e.g. Premiere Pro, Figma, Photoshop" disabled={!canPost} />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Good-to-have Skills</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Good-to-have Skills</label>
               <ChipInput items={goodToHaveSkills} onRemove={removeGoodSkill} value={newGoodSkill}
                 onChange={e => setNewGoodSkill(e.target.value)} onAdd={addGoodSkill}
                 placeholder="e.g. Motion Design, TypeScript" disabled={!canPost} />
@@ -328,8 +353,11 @@ export default function PostOpportunity() {
           </div>
 
           {/* ═══ Scope / Deliverables ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">What You'll Be Doing</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">What You'll Be Doing</h2>
+            </div>
             <p className="text-xs text-slate-500">Add the key deliverables and responsibilities for this opportunity.</p>
             <ChipInput items={scope} onRemove={removeScopeItem} value={newScope}
               onChange={e => setNewScope(e.target.value)} onAdd={addScopeItem}
@@ -337,55 +365,61 @@ export default function PostOpportunity() {
           </div>
 
           {/* ═══ Multi-role Breakdown ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Roles Needed</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Users className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Roles Needed</h2>
+            </div>
             <p className="text-xs text-slate-500">If you need multiple people with different roles, specify them here.</p>
             {rolesNeeded.length > 0 && (
               <div className="space-y-2">
                 {rolesNeeded.map((r, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5">
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <span className="font-semibold text-sm text-slate-700">{r.title}</span>
                     <div className="flex items-center gap-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">{r.count} needed</span>
+                      <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-primary ring-1 ring-primary/20">{r.count} needed</span>
                       <button type="button" onClick={() => removeRole(i)} className="text-rose-500 hover:text-rose-700"><Trash2 className="size-4" /></button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="flex-1 min-w-[180px]">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
                 <label className="mb-0.5 block text-[11px] font-semibold text-slate-500">Role Title</label>
                 <input value={newRoleTitle} onChange={e => setNewRoleTitle(e.target.value)}
                   placeholder="e.g. React Native Developer"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
               <div className="w-24">
                 <label className="mb-0.5 block text-[11px] font-semibold text-slate-500">Count</label>
                 <input type="number" min={1} value={newRoleCount} onChange={e => setNewRoleCount(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
-              <Button type="button" onClick={addRole} disabled={!canPost} size="sm" className="mb-0.5">
+              <Button type="button" onClick={addRole} disabled={!canPost} size="sm" className="mb-0.5 rounded-xl">
                 <Plus className="size-4 mr-1" /> Add
               </Button>
             </div>
           </div>
 
           {/* ═══ Compensation & Timeline ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Compensation & Timeline</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Compensation & Timeline</h2>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Budget (₹)</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Budget (₹)</label>
                 <input type="number" value={budget} onChange={e => setBudget(e.target.value)}
                   placeholder="e.g. 15000"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Budget Type</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Budget Type</label>
                 <select value={budgetType} onChange={e => setBudgetType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                   <option value="fixed">Fixed Project</option>
                   <option value="hourly">Hourly Rate</option>
                   <option value="monthly">Monthly</option>
@@ -395,38 +429,38 @@ export default function PostOpportunity() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Duration</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duration</label>
                 <select value={duration} onChange={e => setDuration(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                   <option value="">Select...</option>
                   {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Weekly Hours Commitment</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Weekly Hours Commitment</label>
                 <input value={weeklyHours} onChange={e => setWeeklyHours(e.target.value)}
                   placeholder="e.g. 15-20 hrs/week"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Start Date</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Start Date</label>
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Deadline</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Deadline</label>
                 <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Payment Schedule</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Payment Schedule</label>
               <select value={paymentSchedule} onChange={e => setPaymentSchedule(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white" disabled={!canPost}>
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary bg-white transition-colors" disabled={!canPost}>
                 <option value="">Select...</option>
                 {PAYMENT_SCHEDULES.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
@@ -443,8 +477,11 @@ export default function PostOpportunity() {
           </div>
 
           {/* ═══ Requirements ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Requirements</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Requirements</h2>
+            </div>
 
             <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
               <input type="checkbox" id="portfolioReq" checked={portfolioRequired}
@@ -456,30 +493,33 @@ export default function PostOpportunity() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Own Equipment / Software Required</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Own Equipment / Software Required</label>
               <input value={ownEquipment} onChange={e => setOwnEquipment(e.target.value)}
                 placeholder="e.g. Own laptop with Adobe Creative Suite, or 'Not required'"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Screening Process</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Screening Process</label>
               <input value={screeningProcess} onChange={e => setScreeningProcess(e.target.value)}
                 placeholder="e.g. Portfolio review → design test (create 1 social post)"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
             </div>
           </div>
 
           {/* ═══ Screening Questions ═══ */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
-            <h2 className="font-bold text-lg">Screening Questions</h2>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="size-5 text-primary" />
+              <h2 className="font-bold text-lg">Screening Questions</h2>
+            </div>
             <p className="text-xs text-slate-500">Ask applicants to answer these questions when applying.</p>
             {screeningQuestions.map((q, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
+              <div key={idx} className="flex gap-3 items-center">
                 <span className="text-xs font-bold text-slate-400 shrink-0">Q{idx + 1}</span>
                 <input value={q.question} onChange={e => updateQuestion(idx, e.target.value)}
                   placeholder={`Question ${idx + 1}`}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" disabled={!canPost} />
+                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" disabled={!canPost} />
                 {idx > 0 && (
                   <button type="button" onClick={() => setScreeningQuestions(p => p.filter((_, i) => i !== idx))}
                     className="text-rose-400 hover:text-rose-600"><X className="size-4" /></button>
@@ -493,8 +533,9 @@ export default function PostOpportunity() {
           </div>
 
           {/* ═══ Submit ═══ */}
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate('/dashboard/listings')} disabled={submitting}>
+          <div className="flex justify-end gap-4 pt-2">
+            <Button type="button" variant="outline" onClick={() => navigate('/dashboard/listings')} disabled={submitting}
+              className="rounded-xl">
               Cancel
             </Button>
             <Button type="submit" disabled={!canPost || submitting}

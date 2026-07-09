@@ -13,6 +13,8 @@ function parseCookie(cookieHeader, name) {
   return match ? match[1] : null
 }
 
+const Conversation = require('../models/Conversation')
+
 module.exports = (io) => {
   io.use((socket, next) => {
     try {
@@ -32,6 +34,9 @@ module.exports = (io) => {
   })
 
   io.on('connection', (socket) => {
+    // Join user's personal room for notifications/unread updates
+    socket.join(String(socket.userId))
+
     // Track online users
     if (!onlineUsers.has(socket.userId)) {
       onlineUsers.set(socket.userId, new Set())
@@ -42,10 +47,13 @@ module.exports = (io) => {
     // Broadcast online status to everyone
     io.emit('user:online', { userId: socket.userId })
 
-    // Join conversation room
-    socket.on('conversation:join', ({ conversationId }) => {
+    // Join conversation room - verify user is participant
+    socket.on('conversation:join', async ({ conversationId }) => {
       if (conversationId) {
-        socket.join(`conv:${conversationId}`)
+        const conv = await Conversation.findById(conversationId).select('participants').lean()
+        if (conv && conv.participants.some(p => String(p) === String(socket.userId))) {
+          socket.join(`conv:${conversationId}`)
+        }
       }
     })
 

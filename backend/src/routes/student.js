@@ -238,7 +238,7 @@ async function notifyViaEmailIfOffline(io, recipientId, senderName, conversation
 }
 
 // GET /api/student/conversations
-router.get('/conversations', async (req, res) => {
+router.get('/conversations', protect, async (req, res) => {
   try {
     const conversations = await Conversation.find({ participants: req.user._id })
       .populate('participants', 'name email role')
@@ -262,7 +262,7 @@ router.get('/conversations', async (req, res) => {
 })
 
 // POST /api/student/conversations
-router.post('/conversations', async (req, res) => {
+router.post('/conversations', protect, async (req, res) => {
   try {
     const { applicationId, text } = req.body
     if (!applicationId) return res.status(400).json({ message: 'applicationId is required' })
@@ -374,7 +374,7 @@ router.post('/conversations', async (req, res) => {
 })
 
 // POST /api/student/conversations/direct — Start or find a direct conversation with another user
-router.post('/conversations/direct', async (req, res) => {
+router.post('/conversations/direct', protect, async (req, res) => {
   try {
     const { userId } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
@@ -407,6 +407,7 @@ router.post('/conversations/direct', async (req, res) => {
         obj.onlineStatus = io.getOnlineStatus(String(userId))
       }
       obj.unreadCount = conv.unreadCount?.get(String(req.user._id)) || 0
+      obj.participant = obj.participants.find(p => String(p._id) !== String(req.user._id))
       return res.json({ conversation: obj })
     }
 
@@ -419,6 +420,7 @@ router.post('/conversations/direct', async (req, res) => {
 
     conv = await Conversation.findById(conv._id)
       .populate('participants', 'name email role')
+      .populate('posting', 'title')
 
     const obj = conv.toObject()
     const io = req.app.get('io')
@@ -426,13 +428,14 @@ router.post('/conversations/direct', async (req, res) => {
       obj.onlineStatus = io.getOnlineStatus(String(userId))
     }
     obj.unreadCount = 0
+    obj.participant = obj.participants.find(p => String(p._id) !== String(req.user._id))
 
     res.status(201).json({ conversation: obj })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
 // GET /api/student/conversations/:id/messages
-router.get('/conversations/:id/messages', async (req, res) => {
+router.get('/conversations/:id/messages', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -468,7 +471,7 @@ router.get('/conversations/:id/messages', async (req, res) => {
 })
 
 // GET /api/student/conversations/:id/search
-router.get('/conversations/:id/search', async (req, res) => {
+router.get('/conversations/:id/search', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -493,7 +496,7 @@ router.get('/conversations/:id/search', async (req, res) => {
 })
 
 // POST /api/student/conversations/:id/messages
-router.post('/conversations/:id/messages', async (req, res) => {
+router.post('/conversations/:id/messages', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -569,7 +572,7 @@ router.post('/conversations/:id/messages', async (req, res) => {
 })
 
 // POST /api/student/conversations/:id/read
-router.post('/conversations/:id/read', async (req, res) => {
+router.post('/conversations/:id/read', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -592,7 +595,7 @@ router.post('/conversations/:id/read', async (req, res) => {
 })
 
 // POST /api/student/conversations/:id/block
-router.post('/conversations/:id/block', async (req, res) => {
+router.post('/conversations/:id/block', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -656,7 +659,7 @@ router.post('/report-conversation', async (req, res) => {
 })
 
 // GET /api/student/conversations/:id/online-status
-router.get('/conversations/:id/online-status', async (req, res) => {
+router.get('/conversations/:id/online-status', protect, async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })

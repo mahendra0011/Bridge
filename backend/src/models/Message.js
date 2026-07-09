@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const messageSchema = new mongoose.Schema({
   conversation: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true, index: true },
   sender:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  senderRole:   { type: String, enum: ['student', 'company', 'admin', 'system'], default: 'student' },
+  senderRole:   { type: String, enum: ['student', 'company', 'admin', 'agency', 'system'], default: 'student' },
   messageType:  { type: String, enum: ['text', 'file', 'system'], default: 'text' },
   text:         { type: String },
   attachments:  [{

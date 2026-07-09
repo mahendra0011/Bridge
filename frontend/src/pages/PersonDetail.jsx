@@ -249,6 +249,11 @@ export default function PersonDetail() {
     finally { setReporting(false) }
   }
 
+  const handleMessage = async () => {
+    if (!user) { toast.error('Log in to message this person'); return }
+    navigate(`/dashboard/messages?userId=${id}`)
+  }
+
   if (loading) {
     return (
       <SiteLayout>
@@ -356,6 +361,11 @@ export default function PersonDetail() {
               <ArrowLeft className="size-4" /> Back to opportunities
             </Link>
             <div className="flex items-center gap-2">
+              {!isOwner && (
+                <Button onClick={handleMessage} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
+                  Message
+                </Button>
+              )}
               <button onClick={handleFollow} className="inline-flex items-center gap-1 rounded-lg p-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
                 {saved ? <BookmarkCheck className="size-4 text-primary" /> : <Bookmark className="size-4" />}
               </button>

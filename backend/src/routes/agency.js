@@ -812,6 +812,7 @@ router.post('/conversations/direct', protect, restrictTo('agency'), async (req, 
       const io = req.app.get('io')
       if (io) obj.onlineStatus = io.getOnlineStatus(String(userId))
       obj.unreadCount = conv.unreadCount?.get(String(req.user._id)) || 0
+      obj.participant = obj.participants.find(p => String(p._id) !== String(req.user._id))
       return res.json({ conversation: obj })
     }
 
@@ -826,6 +827,7 @@ router.post('/conversations/direct', protect, restrictTo('agency'), async (req, 
     const io = req.app.get('io')
     if (io) obj.onlineStatus = io.getOnlineStatus(String(userId))
     obj.unreadCount = 0
+    obj.participant = obj.participants.find(p => String(p._id) !== String(req.user._id))
 
     res.status(201).json({ conversation: obj })
   } catch (err) {
@@ -845,18 +847,19 @@ router.get('/conversations', protect, restrictTo('agency'), async (req, res) => 
 
     const io = req.app.get('io')
     const formatted = conversations.map(c => {
-      const other = c.participants.find(p => String(p._id) !== String(req.user._id))
-      return {
-        _id: c._id,
-        participant: other,
-        lastMessage: c.lastMessage || (c.lastMessage?.content ? c.lastMessage.content : ''),
-        lastMessageAt: c.lastMessageAt || c.updatedAt,
-        unread: c.unreadCount?.get(String(req.user._id)) || 0,
-        unreadCount: c.unreadCount?.get(String(req.user._id)) || 0,
-        posting: c.posting,
-        application: c.application,
-        onlineStatus: other && io ? io.getOnlineStatus(String(other._id)) : { online: false, lastSeen: null },
-      }
+const other = c.participants.find(p => String(p._id) !== String(req.user._id))
+       return {
+         _id: c._id,
+         participant: other,
+         participants: c.participants,
+         lastMessage: c.lastMessage || (c.lastMessage?.content ? c.lastMessage.content : ''),
+         lastMessageAt: c.lastMessageAt || c.updatedAt,
+         unread: c.unreadCount?.get(String(req.user._id)) || 0,
+         unreadCount: c.unreadCount?.get(String(req.user._id)) || 0,
+         posting: c.posting,
+         application: c.application,
+         onlineStatus: other && io ? io.getOnlineStatus(String(other._id)) : { online: false, lastSeen: null },
+       }
     })
     res.json({ conversations: formatted })
   } catch (err) {
@@ -906,8 +909,10 @@ router.get('/conversations/:id/messages', protect, restrictTo('agency'), async (
 // ─── Messages: Send a message ──────────────────────────────────────────────
 router.post('/conversations/:id/messages', protect, restrictTo('agency'), async (req, res) => {
   try {
-    const { content } = req.body
-    if (!content) return res.status(400).json({ message: 'Message content is required' })
+    const { text, attachments } = req.body
+    if (!text?.trim() && (!attachments || attachments.length === 0)) {
+      return res.status(400).json({ message: 'Message content or attachment required' })
+    }
 
     const conversation = await Conversation.findById(req.params.id)
     if (!conversation) return res.status(404).json({ message: 'Conversation not found' })
@@ -921,19 +926,20 @@ router.post('/conversations/:id/messages', protect, restrictTo('agency'), async 
       return res.status(403).json({ message: 'Unable to send message' })
     }
 
-    const redFlagReasons = RED_FLAG_PHRASES.filter(phrase => content?.toLowerCase().includes(phrase))
+    const redFlagReasons = RED_FLAG_PHRASES.filter(phrase => text?.toLowerCase().includes(phrase))
 
     const message = await Message.create({
       conversation: req.params.id,
       sender: req.user._id,
       senderRole: 'agency',
-      messageType: 'text',
-      text: content,
+      messageType: attachments?.length > 0 ? 'file' : 'text',
+      text: text?.trim(),
+      attachments: attachments || [],
       redFlagged: redFlagReasons.length > 0,
       redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
     })
 
-    conversation.lastMessage = content
+    conversation.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')
     conversation.lastMessageAt = new Date()
     conversation.lastSender = req.user._id
     // Update unread count for recipient

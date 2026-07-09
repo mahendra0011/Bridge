@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   MessageSquare, Search, Send, Paperclip, Phone, MoreVertical,
@@ -8,6 +8,19 @@ import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { useSocket } from '@/hooks/useSocket'
+
+function timeAgo(date) {
+  if (!date) return ''
+  const diffMs = Date.now() - new Date(date).getTime()
+  const mins = Math.floor(diffMs / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
 
 export default function AgencyMessages() {
   const { user } = useAuth()
@@ -22,6 +35,65 @@ export default function AgencyMessages() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [typingUsers, setTypingUsers] = useState(new Set())
+  const activeIdRef = useRef(null)
+  const messagesEndRef = useRef(null)
+
+  const { emit } = useSocket({
+    'message:new': useCallback((data) => {
+      const convId = activeIdRef.current
+      if (convId && String(data.conversation || data._id?.conversation) === convId) {
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === data._id)) return prev
+          return [...prev, data]
+        })
+      }
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === String(data.conversation || data._id?.conversation)
+            ? { ...c, lastMessage: data.text || 'Sent a file', lastMessageAt: data.createdAt, lastSender: data.sender?._id }
+            : c
+        )
+      )
+    }, []),
+    'message:updated': useCallback((data) => {
+      setMessages((prev) =>
+        prev.map((m) => (m._id === data.messageId ? { ...m, ...data.updates } : m))
+      )
+    }, []),
+    'typing:start': useCallback((data) => {
+      if (data.conversationId === activeIdRef.current) {
+        setTypingUsers((prev) => new Set(prev).add(data.userId))
+      }
+    }, []),
+    'typing:stop': useCallback((data) => {
+      if (data.conversationId === activeIdRef.current) {
+        setTypingUsers((prev) => {
+          const next = new Set(prev)
+          next.delete(data.userId)
+          return next
+        })
+      }
+    }, []),
+    'message:read': useCallback((data) => {
+      if (data.conversationId === activeIdRef.current) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            data.messageIds.includes(m._id)
+              ? { ...m, readBy: [...(m.readBy || []), data.userId] }
+              : m
+          )
+        )
+      }
+    }, []),
+    'unread:update': useCallback((data) => {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === data.conversationId ? { ...c, unread: data.count } : c
+        )
+      )
+    }, []),
+  })
 
   const loadConversations = () => {
     setLoading(true)
@@ -50,7 +122,13 @@ export default function AgencyMessages() {
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
   }, [searchParams, user, setSearchParams])
 
+  useEffect(() => {
+    activeIdRef.current = activeChat?._id || null
+  }, [activeChat])
+
   const loadMessages = async (chatId) => {
+    setPage(1)
+    setMessages([])
     try {
       const data = await api.get(`/api/agency/conversations/${chatId}/messages`)
       setMessages(data.messages || [])
@@ -72,9 +150,21 @@ export default function AgencyMessages() {
     } catch (err) {}
   }
 
+  useEffect(() => {
+    if (activeChat) {
+      loadMessages(activeChat._id)
+      emit('conversation:join', { conversationId: activeChat._id })
+      api.post(`/api/agency/conversations/${activeChat._id}/read`).catch(() => {})
+    }
+    return () => {
+      if (activeChat) {
+        emit('conversation:leave', { conversationId: activeChat._id })
+      }
+    }
+  }, [activeChat, emit])
+
   const openChat = (conv) => {
     setActiveChat(conv)
-    if (conv._id) loadMessages(conv._id)
   }
 
   const handleSend = async () => {
@@ -84,8 +174,15 @@ export default function AgencyMessages() {
     setMessages(prev => [...prev, tempMsg])
     setNewMessage('')
     try {
-      const data = await api.post(`/api/agency/conversations/${activeChat._id}/messages`, { content: newMessage.trim() })
+      const data = await api.post(`/api/agency/conversations/${activeChat._id}/messages`, { text: newMessage.trim() })
       setMessages(prev => prev.map(m => m._id === tempMsg._id ? data.message || { ...tempMsg, temp: false } : m))
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === activeChat._id
+            ? { ...c, lastMessage: data.message?.text || '', lastMessageAt: data.message?.createdAt, lastSender: user._id }
+            : c
+        )
+      )
     } catch (err) {
       toast.error('Failed to send')
       setMessages(prev => prev.filter(m => m._id !== tempMsg._id))
@@ -94,8 +191,25 @@ export default function AgencyMessages() {
     }
   }
 
+  const handleTyping = () => {
+    if (!activeChat) return
+    emit('typing:start', { conversationId: activeChat._id })
+    setTimeout(() => {
+      emit('typing:stop', { conversationId: activeChat._id })
+    }, 2000)
+  }
+
   const filteredConversations = conversations.filter(c =>
-    !search || c.participant?.name?.toLowerCase().includes(search.toLowerCase())
+    !search || c.participant?.name?.toLowerCase().includes(search.toLowerCase()) || c.participants?.some(p => p?.name?.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  const otherParticipant = (conv) =>
+    conv?.participants?.find((p) => String(p._id) !== String(user?._id)) || {}
+
+  const getUnreadCount = (conv) => conv?.unread || 0
+
+  const isTyping = [...typingUsers].some((id) =>
+    activeChat?.participants?.some((p) => String(p._id) === String(id) && String(id) !== String(user?._id))
   )
 
   return (
@@ -127,16 +241,16 @@ export default function AgencyMessages() {
                 <button key={conv._id} onClick={() => openChat(conv)}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${activeChat?._id === conv._id ? 'bg-primary/5 border-l-2 border-primary' : ''}`}>
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                    {(conv.participant?.name || 'U')[0]}
+                    {(conv.participant?.name || otherParticipant(conv)?.name || 'U')[0]}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold truncate">{conv.participant?.name || 'Unknown'}</p>
+                    <p className="text-sm font-semibold truncate">{conv.participant?.name || otherParticipant(conv)?.name || 'Unknown'}</p>
                     <p className="text-xs text-slate-500 truncate">{conv.lastMessage || 'No messages yet'}</p>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-[10px] text-slate-400">{conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ''}</p>
-                    {conv.unread > 0 && (
-                      <span className="mt-1 inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">{conv.unread}</span>
+                    {getUnreadCount(conv) > 0 && (
+                      <span className="mt-1 inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">{getUnreadCount(conv) > 99 ? '99+' : getUnreadCount(conv)}</span>
                     )}
                   </div>
                 </button>
@@ -152,11 +266,11 @@ export default function AgencyMessages() {
             <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
               <div className="flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                  {(activeChat.participant?.name || 'U')[0]}
+                  {(activeChat.participant?.name || otherParticipant(activeChat)?.name || 'U')[0]}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{activeChat.participant?.name || 'Unknown'}</p>
-                  <p className="text-xs text-slate-500">{activeChat.participant?.email || ''}</p>
+                  <p className="text-sm font-semibold">{activeChat.participant?.name || otherParticipant(activeChat)?.name || 'Unknown'}</p>
+                  <p className="text-xs text-slate-500">{activeChat.participant?.email || otherParticipant(activeChat)?.email || ''}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -188,13 +302,18 @@ export default function AgencyMessages() {
                   )
                 })
               )}
+              {isTyping && (
+                <div className="px-4 py-1 text-xs text-slate-400 italic">
+                  {otherParticipant(activeChat)?.name} is typing...
+                </div>
+              )}
             </div>
 
             {/* Chat Input */}
             <div className="border-t border-slate-200 bg-white p-4">
               <div className="flex items-center gap-2">
                 <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Paperclip className="size-5" /></button>
-                <input value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                <input value={newMessage} onChange={e => { setNewMessage(e.target.value); handleTyping() }}
                   placeholder="Type a message..."
                   className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()} />

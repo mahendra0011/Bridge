@@ -2,9 +2,21 @@ const router = require('express').Router()
 const User = require('../models/User')
 const Opportunity = require('../models/Opportunity')
 const PersonReview = require('../models/PersonReview')
+const Conversation = require('../models/Conversation')
+const Message = require('../models/Message')
+const RED_FLAG_PHRASES = [
+  'processing fee', 'pay to register', 'bank details', 'deposit',
+  'registration fee', 'security deposit', 'joining fee',
+]
+
+function scanRedFlags(text) {
+  if (!text) return []
+  return RED_FLAG_PHRASES.filter((phrase) => text.toLowerCase().includes(phrase))
+}
+const { protect } = require('../middleware/auth')
+const StudentProfile = require('../models/StudentProfile')
 
 // GET /api/person/analytics — Must come BEFORE /:id to avoid route collision
-const { protect } = require('../middleware/auth')
 router.get('/analytics', protect, async (req, res) => {
   try {
     const opps = await Opportunity.find({ poster: req.user._id }).lean()
@@ -257,7 +269,6 @@ router.post('/:id/reviews', protect, async (req, res) => {
 })
 
 // POST /api/person/:id/follow — Follow/unfollow a person
-const StudentProfile = require('../models/StudentProfile')
 router.post('/:id/follow', protect, async (req, res) => {
   try {
     const mongoose = require('mongoose')
@@ -292,6 +303,99 @@ router.get('/:id/follow', protect, async (req, res) => {
     const profile = await StudentProfile.findOne({ user: req.user._id }).lean()
     const saved = profile?.savedPersons?.some(p => String(p) === req.params.id) || false
     res.json({ saved })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// GET /api/person/conversations - Get conversations for individual poster (any role)
+router.get('/conversations', protect, async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ participants: req.user._id })
+      .populate('participants', 'name email role')
+      .populate('posting', 'title')
+      .sort('-lastMessageAt')
+      .lean()
+    res.json({ conversations })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// POST /api/person/conversations/:id/messages - Send message
+router.post('/conversations/:id/messages', protect, async (req, res) => {
+  try {
+    const { text, attachments } = req.body
+    if (!text?.trim() && (!attachments || attachments.length === 0)) {
+      return res.status(400).json({ message: 'Message text or attachment required' })
+    }
+
+    const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+    if (conv.status === 'blocked') return res.status(403).json({ message: 'Conversation is blocked' })
+
+    const redFlagReasons = scanRedFlags(text)
+    const message = await Message.create({
+      conversation: req.params.id,
+      sender: req.user._id,
+      senderRole: req.user.role || 'student',
+      messageType: attachments?.length > 0 ? 'file' : 'text',
+      text: text?.trim(),
+      attachments: attachments || [],
+      redFlagged: redFlagReasons.length > 0,
+      redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
+    })
+
+    conv.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')
+    conv.lastMessageAt = new Date()
+    conv.lastSender = req.user._id
+    conv.participants.forEach(pId => {
+      if (String(pId) !== String(req.user._id)) {
+        const current = conv.unreadCount.get(String(pId)) || 0
+        conv.unreadCount.set(String(pId), current + 1)
+      }
+    })
+    await conv.save()
+
+    const populated = await Message.findById(message._id).populate('sender', 'name email role')
+
+    const io = req.app.get('io')
+    if (io) {
+      io.sendMessage(String(conv._id), populated.toObject())
+      conv.participants.forEach(pId => {
+        if (String(pId) !== String(req.user._id)) {
+          const unread = conv.unreadCount.get(String(pId)) || 0
+          io.sendUnreadUpdate(String(pId), String(conv._id), unread)
+        }
+      })
+    }
+
+    res.status(201).json({ message: populated })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// POST /api/person/conversations/:id/read - Mark messages as read
+router.post('/conversations/:id/read', protect, async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+
+    await Message.updateMany(
+      { conversation: req.params.id, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
+      { $addToSet: { readBy: req.user._id } }
+    )
+
+    conv.unreadCount.set(String(req.user._id), 0)
+    await conv.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.sendUnreadUpdate(String(req.user._id), String(req.params.id), 0)
+    }
+
+    res.json({ message: 'Messages marked as read' })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

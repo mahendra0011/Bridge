@@ -336,7 +336,7 @@ export default function Messages() {
   }
 
   const otherParticipant = (conv) =>
-    conv?.participants?.find((p) => p._id !== user._id) || {}
+    conv?.participants?.find((p) => String(p._id) !== String(user._id)) || {}
 
   const getUnreadCount = (conv) => conv?.unreadCount || 0
 
