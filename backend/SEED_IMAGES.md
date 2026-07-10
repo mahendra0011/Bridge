@@ -1,72 +1,69 @@
-# Seed Images - Cloudinary
+# Seed Images - Unsplash (Real Images)
 
-This document describes the seed images uploaded to Cloudinary for demo data.
+This document describes the seed images used in demo data. All images are high-quality, professional photos from Unsplash.
 
 ## Overview
 
-Images are stored in Cloudinary under the `bridge/seed/` folder for use in seed data.
+Images are loaded directly from Unsplash via CDN URLs. These are real, high-quality, relevant images for demo companies, agencies, and portfolios.
 
-## Uploaded Images
+## Image URLs for Seed Files
 
 ### Company Logos (150x150)
-| Name | Cloudinary URL |
-|------|----------------|
-| healthtech-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633723/bridge/seed/companyLogos/healthtech-logo.jpg |
-| techcorp-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633724/bridge/seed/companyLogos/techcorp-logo.jpg |
-| innosoft-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633726/bridge/seed/companyLogos/innosoft-logo.jpg |
-| datasphere-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633727/bridge/seed/companyLogos/datasphere-logo.jpg |
-| fintech-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633729/bridge/seed/companyLogos/fintech-logo.jpg |
+| Name | Unsplash URL |
+|------|--------------|
+| healthtech-logo | https://images.unsplash.com/photo-1576091160399-1e6e4c37548e?w=150&h=150&fit=crop&q=80 |
+| techcorp-logo | https://images.unsplash.com/photo-1550751827-64bde5b4b3c1?w=150&h=150&fit=crop&q=80 |
+| innosoft-logo | https://images.unsplash.com/photo-1551650975-87d72d503ef2?w=150&h=150&fit=crop&q=80 |
+| datasphere-logo | https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=150&h=150&fit=crop&q=80 |
+| fintech-logo | https://images.unsplash.com/photo-1563986768609-32233ef00d06?w=150&h=150&fit=crop&q=80 |
 
 ### Cover/Banner Images (1920x400)
-| Name | Cloudinary URL |
-|------|----------------|
-| healthtech-banner | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633731/bridge/seed/coverBanners/healthtech-banner.jpg |
-| techcorp-banner | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633733/bridge/seed/coverBanners/techcorp-banner.jpg |
-| innosoft-banner | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633735/bridge/seed/coverBanners/innosoft-banner.jpg |
-| datasphere-banner | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633738/bridge/seed/coverBanners/datasphere-banner.jpg |
-| fintech-banner | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633740/bridge/seed/coverBanners/fintech-banner.jpg |
+| Name | Unsplash URL |
+|------|--------------|
+| healthtech-banner | https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80 |
+| techcorp-banner | https://images.unsplash.com/photo-1497366211944-e8acd9c1ecf8?w=1920&h=400&fit=crop&q=80 |
+| innosoft-banner | https://images.unsplash.com/photo-1526738904085-6ca124643a64?w=1920&h=400&fit=crop&q=80 |
+| datasphere-banner | https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=1920&h=400&fit=crop&q=80 |
+| fintech-banner | https://images.unsplash.com/photo-1554261069-2a5947b6f6ea?w=1920&h=400&fit=crop&q=80 |
 
 ### Company Office Photos (600x400)
-| Name | Cloudinary URL |
-|------|----------------|
-| office-1 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633742/bridge/seed/companyPhotos/office-1.jpg |
-| office-2 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633743/bridge/seed/companyPhotos/office-2.jpg |
-| office-3 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633744/bridge/seed/companyPhotos/office-3.jpg |
-| office-4 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633746/bridge/seed/companyPhotos/office-4.jpg |
-| team-event-1 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633747/bridge/seed/companyPhotos/team-event-1.jpg |
-| team-event-2 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633748/bridge/seed/companyPhotos/team-event-2.jpg |
-| meeting-1 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633750/bridge/seed/companyPhotos/meeting-1.jpg |
-| workspace-1 | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633751/bridge/seed/companyPhotos/workspace-1.jpg |
+| Name | Unsplash URL |
+|------|--------------|
+| office-1 | https://images.unsplash.com/photo-1556756901-49a78f90b8d1?w=600&h=400&fit=crop&q=80 |
+| office-2 | https://images.unsplash.com/photo-1542744095-fcf47d8b5318?w=600&h=400&fit=crop&q=80 |
+| team-event-1 | https://images.unsplash.com/photo-1517245386807-bb43f82c8e29?w=600&h=400&fit=crop&q=80 |
+| meeting-1 | https://images.unsplash.com/photo-1519671481765-9a04cb1dc7e5?w=600&h=400&fit=crop&q=80 |
 
 ### Agency Logos (150x150)
-| Name | Cloudinary URL |
-|------|----------------|
-| demo-talent-agency-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633753/bridge/seed/agencyLogos/demo-talent-agency-logo.jpg |
-| creative-solutions-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633754/bridge/seed/agencyLogos/creative-solutions-logo.jpg |
-| hr-consultants-logo | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633755/bridge/seed/agencyLogos/hr-consultants-logo.jpg |
+| Name | Unsplash URL |
+|------|--------------|
+| demo-talent-agency-logo | https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=150&h=150&fit=crop&q=80 |
+| creative-solutions-logo | https://images.unsplash.com/photo-1550751827-64bde5b4b3c1?w=150&h=150&fit=crop&q=80 |
+| hr-consultants-logo | https://images.unsplash.com/photo-1560250097-0b9337271ff6?w=150&h=150&fit=crop&q=80 |
 
 ### Portfolio Images (600x400)
-| Name | Cloudinary URL |
-|------|----------------|
-| portfolio-tech | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633756/bridge/seed/portfolioImages/portfolio-tech.jpg |
-| portfolio-hr | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633758/bridge/seed/portfolioImages/portfolio-hr.jpg |
-| portfolio-digital | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633759/bridge/seed/portfolioImages/portfolio-digital.jpg |
-| portfolio-content | https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633760/bridge/seed/portfolioImages/portfolio-content.jpg |
+| Name | Unsplash URL |
+|------|--------------|
+| portfolio-tech | https://images.unsplash.com/photo-1467232014286-a89728073327?w=600&h=400&fit=crop&q=80 |
+| portfolio-digital | https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&q=80 |
+| portfolio-content | https://images.unsplash.com/photo-1499755109340-9a5f03a4d1c2?w=600&h=400&fit=crop&q=80 |
+| portfolio-hr | https://images.unsplash.com/photo-1556756901-49a78f90b8d1?w=600&h=400&fit=crop&q=80 |
 
-## How to Re-upload Images
+## Seed Files Updated
 
-If you need to regenerate the images or update URLs:
+The following seed files now use these Unsplash image URLs:
+
+1. **backend/seed-company.js** - HealthTech Inc logo, banner, and office photos
+2. **backend/seed-demo-users.js** - Demo Talent Agency logo and portfolio
+3. **backend/src/scripts/seed.js** - All demo companies and agencies
+
+## How to Run Seed
 
 ```bash
 cd backend
-node seed-images-cloudinary.js
+npm run seed:full
 ```
-
-This will:
-1. Fetch placeholder images from picsum.photos
-2. Upload them to Cloudinary with auto optimization
-3. Print the new URLs for copying to seed files
 
 ## Source
 
-Images are sourced from [picsum.photos](https://picsum.photos) - a free placeholder image service. All images are automatically optimized by Cloudinary with `quality: auto` and `fetch_format: auto`.
+Images are sourced from [Unsplash](https://unsplash.com) - professional, high-quality, royalty-free images. All URLs include auto-optimization parameters (`q=80`, `fit=crop`).

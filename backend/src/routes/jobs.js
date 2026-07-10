@@ -2,7 +2,7 @@ const router = require('express').Router()
 const { body } = require('express-validator')
 const { protect, restrictTo } = require('../middleware/auth')
 const { validate } = require('../middleware/validate')
-const { sanitizeFields } = require('../utils/sanitize')
+const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
 const { uploadResume, uploadApplyFiles, getFileUrl } = require('../middleware/upload')
 const Job = require('../models/Job')
 const Application = require('../models/Application')
@@ -47,11 +47,11 @@ router.get('/', async (req, res) => {
     const filter = { status: 'approved' }
     if (query) {
       filter.$or = [
-        { title: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } }
+        { title: { $regex: escapeRegex(query), $options: 'i' } },
+        { description: { $regex: escapeRegex(query), $options: 'i' } }
       ]
     }
-    if (location) filter.location = { $regex: location, $options: 'i' }
+    if (location) filter.location = { $regex: escapeRegex(location), $options: 'i' }
     if (mode) filter.mode = mode
     if (category) filter.category = category
     if (featured === 'true') filter.isFeatured = true
@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
     }
     if (skills) {
       const skillList = String(skills).split(',').map((s) => s.trim()).filter(Boolean)
-      if (skillList.length) filter.skills = { $in: skillList.map((s) => new RegExp('^' + s + '$', 'i')) }
+      if (skillList.length) filter.skills = { $in: skillList.map((s) => new RegExp('^' + escapeRegex(s) + '$', 'i')) }
     }
     if (deadlineBefore) filter.deadline = { $lte: new Date(deadlineBefore) }
 

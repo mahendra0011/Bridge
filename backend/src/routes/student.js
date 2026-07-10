@@ -1,8 +1,8 @@
 const router = require('express').Router()
 const axios = require('axios')
 const { protect, restrictTo } = require('../middleware/auth')
-const { sanitizeFields } = require('../utils/sanitize')
-const { uploadResume, getFileUrl } = require('../middleware/upload')
+const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
+const { uploadResume, getFileUrl, uploadApplyFiles } = require('../middleware/upload')
 const StudentProfile = require('../models/StudentProfile')
 const Application = require('../models/Application')
 const Notification = require('../models/Notification')
@@ -219,25 +219,35 @@ function scanRedFlags(text) {
 }
 
 async function notifyViaEmailIfOffline(io, recipientId, senderName, conversationId) {
-  try {
-    const status = io.getOnlineStatus(String(recipientId))
-    if (status.online) return
+   try {
+     const status = io.getOnlineStatus(String(recipientId))
+     if (status.online) return
 
-    const recipient = await User.findById(recipientId).select('name email role')
-    if (!recipient?.email) return
+     const recipient = await User.findById(recipientId).select('name email role')
+     if (!recipient?.email) return
 
-    if (recipient.role === 'student') {
-      const profile = await StudentProfile.findOne({ user: recipientId }).select('settings')
-      const digest = profile?.settings?.messageDigest || 'instant'
-      if (digest !== 'instant') return
-    }
+     if (recipient.role === 'student') {
+       const profile = await StudentProfile.findOne({ user: recipientId }).select('settings')
+       const digest = profile?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     } else if (recipient.role === 'company') {
+       const Company = require('../models/Company')
+       const company = await Company.findOne({ user: recipientId }).select('settings')
+       const digest = company?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     } else if (recipient.role === 'agency') {
+       const Agency = require('../models/Agency')
+       const agency = await Agency.findOne({ user: recipientId }).select('settings')
+       const digest = agency?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     }
 
-    const path = recipient.role === 'student' ? '/dashboard/messages' : `/${recipient.role}/messages`
-    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
-    const content = newMessageEmail(recipient.name, senderName, link)
-    await sendEmail({ to: recipient.email, ...content })
-  } catch {} // silently fail — email is best-effort
-}
+const path = recipient.role === 'student' ? `/dashboard/messages/${conversationId}` : `/${recipient.role}/messages/${conversationId}`
+      const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
+     const content = newMessageEmail(recipient.name, senderName, link)
+     await sendEmail({ to: recipient.email, ...content })
+   } catch {} // silently fail — email is best-effort
+ }
 
 // GET /api/student/conversations
 router.get('/conversations', protect, async (req, res) => {
@@ -388,7 +398,7 @@ router.post('/conversations', protect, async (req, res) => {
 // POST /api/student/conversations/direct — Start or find a direct conversation with another user
 router.post('/conversations/direct', protect, async (req, res) => {
   try {
-    const { userId } = req.body
+    const { userId, postingId, applicationId } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
     if (String(userId) === String(req.user._id)) {
       return res.status(400).json({ message: 'Cannot start conversation with yourself' })
@@ -396,12 +406,26 @@ router.post('/conversations/direct', protect, async (req, res) => {
 
     // Check if student has blocked this user
     const StudentProfile = require('../models/StudentProfile')
-    const studentProfile = await StudentProfile.findOne({ user: req.user._id }).select('blockedUsers')
+    const studentProfile = await StudentProfile.findOne({ user: req.user._id })
     const studentBlocked = studentProfile?.blockedUsers?.some(
       (id) => String(id) === String(userId)
     )
     if (studentBlocked) {
       return res.status(403).json({ message: 'Unable to start conversation' })
+    }
+
+    // Require valid relationship: student must have applied to company's posting or been invited
+    const hasApplication = await Application.findOne({
+      student: req.user._id,
+      $or: [{ job: { $in: await Job.find({ company: userId }).select('_id') } },
+            { internship: { $in: await Internship.find({ company: userId }).select('_id') } }],
+    })
+    const CompanyModel = require('../models/Company')
+    const company = await CompanyModel.findOne({ user: userId }).select('invitedCandidates')
+    const hasInvite = company?.invitedCandidates?.some((inv) => String(inv) === String(req.user._id))
+
+    if (!applicationId && !postingId && !hasApplication && !hasInvite) {
+      return res.status(403).json({ message: 'You can only message companies you have applied to or been invited by' })
     }
 
     // Check if conversation already exists between these two users
@@ -455,21 +479,22 @@ router.get('/conversations/:id/messages', protect, async (req, res) => {
 
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50))
-    const skip = (page - 1) * limit
 
-    const [messages, total] = await Promise.all([
-      Message.find({ conversation: req.params.id })
-        .populate('sender', 'name email role')
-        .sort('createdAt')
-        .skip(skip)
-        .limit(limit),
-      Message.countDocuments({ conversation: req.params.id }),
-    ])
+    const total = await Message.countDocuments({ conversation: req.params.id })
 
-    await Message.updateMany(
-      { conversation: req.params.id, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
-      { $addToSet: { readBy: req.user._id } }
-    )
+    const messages = await Message.find({ conversation: req.params.id })
+      .populate('sender', 'name email role')
+      .sort('-createdAt')
+      .skip((total - page * limit))
+      .limit(limit)
+
+    const messageIds = messages.map(m => m._id)
+    if (messageIds.length > 0) {
+      await Message.updateMany(
+        { _id: { $in: messageIds }, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
+        { $addToSet: { readBy: req.user._id } }
+      )
+    }
 
     conv.unreadCount.set(String(req.user._id), 0)
     await conv.save()
@@ -496,8 +521,8 @@ router.get('/conversations/:id/search', protect, async (req, res) => {
       conversation: req.params.id,
       messageType: { $ne: 'system' },
       $or: [
-        { text: { $regex: q, $options: 'i' } },
-        { 'attachments.name': { $regex: q, $options: 'i' } },
+        { text: { $regex: escapeRegex(q), $options: 'i' } },
+        { 'attachments.name': { $regex: escapeRegex(q), $options: 'i' } },
       ],
     })
       .populate('sender', 'name email role')
@@ -507,6 +532,15 @@ router.get('/conversations/:id/search', protect, async (req, res) => {
     res.json({ messages, total: messages.length })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
+
+// POST /api/student/conversations/attachments - Chat file upload
+router.post('/conversations/attachments', protect, (req, res) => {
+   uploadDocument(req, res, async (err) => {
+     if (err) return res.status(400).json({ message: err.message })
+     const fileUrl = getFileUrl(req, 'documents')
+     res.json({ fileUrl })
+   })
+ })
 
 // POST /api/student/conversations/:id/messages
 router.post('/conversations/:id/messages', protect, async (req, res) => {
@@ -545,17 +579,8 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
     })
     await conv.save()
 
-    // If candidate replies to a company user, reveal contact
-    const otherId = conv.participants.find((p) => String(p) !== String(req.user._id))
-    if (otherId) {
-      const otherUser = await User.findById(otherId).select('role companyId')
-      if (otherUser?.companyId) {
-        await StudentProfile.findOneAndUpdate(
-          { user: req.user._id },
-          { $addToSet: { contactRevealedTo: otherUser.companyId } }
-        )
-      }
-    }
+    // Contact reveal is ONLY handled via invite-accept flow (see /open-to-work/invites/:id/respond)
+    // DO NOT auto-reveal on every reply - this was bypassing consent
 
     const populated = await Message.findById(message._id).populate('sender', 'name email role')
 
@@ -605,7 +630,7 @@ router.post('/conversations/:id/read', protect, async (req, res) => {
       io.sendUnreadUpdate(String(req.user._id), String(req.params.id), 0)
     }
 
-    res.json({ message: 'Messages marked as read' })
+    res.json({ success: true })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
@@ -629,8 +654,16 @@ router.post('/conversations/:id/block', protect, async (req, res) => {
     conv.status = 'blocked'
     await conv.save()
 
-    const io = req.app.get('io')
+    // Add blocked user to student's blockedUsers array for account-level blocking
     const otherId = conv.participants.find((p) => String(p) !== String(req.user._id))
+    if (otherId) {
+      await StudentProfile.updateOne(
+        { user: req.user._id, blockedUsers: { $ne: otherId } },
+        { $addToSet: { blockedUsers: otherId } }
+      )
+    }
+
+    const io = req.app.get('io')
     if (io && otherId) {
       io.sendNotification(String(otherId), {
         title: 'Conversation Blocked',

@@ -66,11 +66,12 @@ export default function Messages() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportDesc, setReportDesc] = useState('')
-  const messagesEndRef = useRef(null)
-  const activeIdRef = useRef(null)
-  const typingTimeoutRef = useRef(null)
-  const fileInputRef = useRef(null)
-  const [page, setPage] = useState(1)
+const messagesEndRef = useRef(null)
+   const activeIdRef = useRef(null)
+   const typingTimeoutRef = useRef(null)
+   const fileInputRef = useRef(null)
+   const messagesContainerRef = useRef(null)
+   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [msgSearchQuery, setMsgSearchQuery] = useState('')
@@ -191,34 +192,41 @@ export default function Messages() {
     activeIdRef.current = activeConv?._id || null
   }, [activeConv])
 
-  useEffect(() => {
-    if (activeConv) {
-      setMsgLoading(true)
-      setPage(1)
-      setMessages([])
-      api.get(`/api/student/conversations/${activeConv._id}/messages?page=1&limit=50`)
-        .then((data) => {
-          setMessages(data.messages || [])
-          setTotalPages(data.totalPages || 1)
-          setHasMore(data.page < data.totalPages)
-        })
-        .catch(() => {})
-        .finally(() => setMsgLoading(false))
-      emit('conversation:join', { conversationId: activeConv._id })
-
-      // Mark as read
-      api.post(`/api/student/conversations/${activeConv._id}/read`).catch(() => {})
-    }
+useEffect(() => {
+     if (activeConv) {
+       setMsgLoading(true)
+       setPage(1)
+       setMessages([])
+       api.get(`/api/student/conversations/${activeConv._id}/messages?page=1&limit=50`)
+         .then((data) => {
+           setMessages(data.messages || [])
+           setTotalPages(data.totalPages || 1)
+           setHasMore(data.page < data.totalPages)
+         })
+         .catch(() => {})
+         .finally(() => setMsgLoading(false))
+       emit('conversation:join', { conversationId: activeConv._id })
+     }
     return () => {
-      if (activeConv) {
+if (activeConv) {
         emit('conversation:leave', { conversationId: activeConv._id })
       }
     }
   }, [activeConv, emit])
 
+   // Auto-scroll on initial load only, not on loadMore
+  const shouldAutoScrollRef = useRef(true)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+      if (shouldAutoScrollRef.current && activeConv && messages.length > 0) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        shouldAutoScrollRef.current = false
+      }
+    }, [messages, activeConv])
+
+  // Reset auto-scroll flag when changing conversations
+  useEffect(() => {
+      shouldAutoScrollRef.current = true
+    }, [activeConv])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -233,11 +241,17 @@ export default function Messages() {
   const loadMore = async () => {
     if (!hasMore || !activeConv) return
     const nextPage = page + 1
+    const prevScrollHeight = messagesContainerRef.current?.scrollHeight || 0
     try {
       const data = await api.get(`/api/student/conversations/${activeConv._id}/messages?page=${nextPage}&limit=50`)
       setMessages((prev) => [...(data.messages || []), ...prev])
       setPage(nextPage)
       setHasMore(nextPage < data.totalPages)
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight - prevScrollHeight
+        }
+      }, 50)
     } catch {}
   }
 
@@ -342,13 +356,13 @@ export default function Messages() {
       return
     }
     const fd = new FormData()
-    fd.append('resume', file)
+    fd.append('document', file)
     fd.append('name', file.name)
     try {
-      const doc = await api.post('/api/student/documents', fd, { isFormData: true })
+      const { fileUrl } = await api.post('/api/student/conversations/attachments', fd, { isFormData: true })
       const data = await api.post(`/api/student/conversations/${activeConv._id}/messages`, {
         text: `Sent: ${file.name}`,
-        attachments: [{ name: file.name, url: doc.document.url, type: file.type.includes('resume') ? 'resume' : 'other' }],
+        attachments: [{ name: file.name, url: fileUrl, type: file.type.includes('resume') ? 'resume' : 'other' }],
       })
       if (data.message) {
         setMessages((prev) => [...prev, data.message])
@@ -556,8 +570,8 @@ export default function Messages() {
                 </div>
               )}
 
-              {/* Messages List */}
-              <div className="flex-1 overflow-y-auto bg-slate-50">
+{/* Messages List */}
+               <div className="flex-1 overflow-y-auto bg-slate-50" ref={messagesContainerRef}>
                 {msgLoading ? (
                   <div className="flex items-center justify-center p-8">
                     <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -648,7 +662,7 @@ export default function Messages() {
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
-                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp"
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                         ref={fileInputRef}
                         className="hidden"
                         onChange={handleFileUpload}

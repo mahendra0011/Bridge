@@ -44,35 +44,59 @@ const DEMO_AGENCY = {
 
 // ─── Cloudinary Seed Image URLs ───────────────────────────────────────────────────
 const COMPANY_LOGO_URLS = [
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633723/bridge/seed/companyLogos/healthtech-logo.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633724/bridge/seed/companyLogos/techcorp-logo.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633726/bridge/seed/companyLogos/innosoft-logo.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633727/bridge/seed/companyLogos/datasphere-logo.jpg',
+  'https://images.unsplash.com/photo-1576091160399-1e6e4c37548e?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1550751827-64bde5b4b3c1?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1551650975-87d72d503ef2?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1563986768609-32233ef00d06?w=150&h=150&fit=crop&q=80',
 ]
 
 const COMPANY_BANNER_URLS = [
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633731/bridge/seed/coverBanners/healthtech-banner.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633733/bridge/seed/coverBanners/techcorp-banner.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633735/bridge/seed/coverBanners/innosoft-banner.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633738/bridge/seed/coverBanners/datasphere-banner.jpg',
+  'https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1497366211944-e8acd9c1ecf8?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1526738904085-6ca124643a64?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1554261069-2a5947b6f6ea?w=1920&h=400&fit=crop&q=80',
 ]
 
 const AGENCY_LOGO_URLS = [
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633753/bridge/seed/agencyLogos/demo-talent-agency-logo.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633754/bridge/seed/agencyLogos/creative-solutions-logo.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633755/bridge/seed/agencyLogos/hr-consultants-logo.jpg',
+  'https://images.unsplash.com/photo-1551288043-65d8e8e0e3d4?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1550751827-64bde5b4b3c1?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1560250097-0b9337271ff6?w=150&h=150&fit=crop&q=80',
+]
+
+const AGENCY_BANNER_URLS = [
+  'https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1497366211944-e8acd9c1ecf8?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1526738904085-6ca124643a64?w=1920&h=400&fit=crop&q=80',
 ]
 
 const COMPANY_PHOTO_URLS = [
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633742/bridge/seed/companyPhotos/office-1.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633743/bridge/seed/companyPhotos/office-2.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633744/bridge/seed/companyPhotos/office-3.jpg',
+  'https://images.unsplash.com/photo-1556756901-49a78f90b8d1?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1542744095-fcf47d8b5318?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1517245386807-bb43f82c8e29?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1519671481765-9a04cb1dc7e5?w=600&h=400&fit=crop&q=80',
 ]
 
 const PORTFOLIO_IMAGE_URLS = [
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633756/bridge/seed/portfolioImages/portfolio-tech.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633758/bridge/seed/portfolioImages/portfolio-hr.jpg',
-  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633759/bridge/seed/portfolioImages/portfolio-digital.jpg',
+  'https://images.unsplash.com/photo-1467232014286-a89728073327?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1499755109340-9a5f03a4d1c2?w=600&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1556756901-49a78f90b8d1?w=600&h=400&fit=crop&q=80',
+]
+
+const USER_AVATAR_URLS = [
+  'https://images.unsplash.com/photo-1507003211169-0a1cd7228821?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767792-0f92e75e9f3e?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29130?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1438761745042-3b2ec2b4c9e5?w=150&h=150&fit=crop&q=80',
+]
+
+const USER_COVER_URLS = [
+  'https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1497366211944-e8acd9c1ecf8?w=1920&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1526738904085-6ca124643a64?w=1920&h=400&fit=crop&q=80',
 ]
 
 // ─── Demo account credentials ────────────────────────────────────────────────
@@ -288,6 +312,9 @@ async function upsertUser(demo) {
     user.isEmailVerified = true
     user.isBlocked = false
     user.password = demo.password
+    user.avatarUrl = pick(USER_AVATAR_URLS)
+    user.profilePhoto = pick(USER_AVATAR_URLS)
+    user.coverUrl = pick(USER_COVER_URLS)
     user.otpCode = undefined
     user.otpExpires = undefined
     user.otpAttempts = 0
@@ -300,6 +327,9 @@ async function upsertUser(demo) {
       password: demo.password,
       role: demo.role,
       isEmailVerified: true,
+      avatarUrl: pick(USER_AVATAR_URLS),
+      profilePhoto: pick(USER_AVATAR_URLS),
+      coverUrl: pick(USER_COVER_URLS),
     })
     console.log(`✅ Created ${demo.role}: ${demo.email}`)
   }
@@ -392,6 +422,9 @@ async function run() {
         password: 'company@123',
         role: 'company',
         isEmailVerified: true,
+        avatarUrl: pick(USER_AVATAR_URLS),
+        profilePhoto: pick(USER_AVATAR_URLS),
+        coverUrl: pick(USER_COVER_URLS),
       })
       comp = await Company.create({
         user: user._id,
@@ -403,6 +436,7 @@ async function run() {
         description: `${c.name} is a leading ${c.industry.toLowerCase()} company.`,
         logoUrl: pick(COMPANY_LOGO_URLS),
         bannerUrl: pick(COMPANY_BANNER_URLS),
+        photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
         isVerified: true,
       })
       console.log(`   Created company: ${c.name}`)
@@ -423,6 +457,7 @@ async function run() {
       website: 'https://creativecutsstudio.com',
       city: 'Mumbai, India',
       logoUrl: AGENCY_LOGO_URLS[0],
+      coverBanner: pick(AGENCY_BANNER_URLS),
       services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'],
       teamSize: '6-10',
       portfolioUrl: 'https://creativecutsstudio.com/portfolio',
@@ -457,15 +492,29 @@ async function run() {
         password: 'agency@123',
         role: 'agency',
         isEmailVerified: true,
+        avatarUrl: pick(USER_AVATAR_URLS),
+        profilePhoto: pick(USER_AVATAR_URLS),
+        coverUrl: pick(USER_COVER_URLS),
       })
       ag = await Agency.create({
         user: u._id,
         agencyName: a.name,
         description: `${a.name} is a ${a.services.slice(0, 2).join(' & ')} agency serving clients worldwide.`,
         city: a.city,
+        logoUrl: pick(AGENCY_LOGO_URLS),
+        coverBanner: pick(AGENCY_BANNER_URLS),
         services: a.services,
         teamSize: a.teamSize,
         portfolioUrl: `https://${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/portfolio`,
+        instagram: `https://instagram.com/${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        portfolio: [
+          {
+            title: `${a.name} Sample Work`,
+            description: `Creative work showcase by ${a.name}`,
+            imageUrl: pick(PORTFOLIO_IMAGE_URLS),
+            category: a.services[0],
+          }
+        ],
         isRegistered: true,
         isProfileComplete: true,
         signupStep: 2,
@@ -771,6 +820,9 @@ async function run() {
         isEmailVerified: true,
         isPhoneVerified: Math.random() > 0.3,
         isIdVerified: Math.random() > 0.6,
+        avatarUrl: pick(USER_AVATAR_URLS),
+        profilePhoto: pick(USER_AVATAR_URLS),
+        coverUrl: pick(USER_COVER_URLS),
       })
     }
     let profile = await StudentProfile.findOne({ user: user._id })

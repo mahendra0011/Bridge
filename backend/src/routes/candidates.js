@@ -1,5 +1,6 @@
 const router = require('express').Router()
 const { protect, restrictTo } = require('../middleware/auth')
+const { escapeRegex } = require('../utils/sanitize')
 const StudentProfile = require('../models/StudentProfile')
 const User = require('../models/User')
 const Company = require('../models/Company')
@@ -78,7 +79,7 @@ router.get('/', optionalCompanyAuth, async (req, res) => {
 
     const filter = { openToWork: true }
     if (q) {
-      const userRegex = { $regex: q, $options: 'i' }
+      const userRegex = { $regex: escapeRegex(q), $options: 'i' }
       const matchingUsers = await User.find({ $or: [{ name: userRegex }, { email: userRegex }] }).select('_id')
       filter.$or = [
         { user: { $in: matchingUsers.map(u => u._id) } },
@@ -92,7 +93,7 @@ router.get('/', optionalCompanyAuth, async (req, res) => {
       const skillList = skills.split(',').map(s => s.trim())
       filter.skills = { $in: skillList }
     }
-    if (location) filter.currentLocation = { $regex: location, $options: 'i' }
+    if (location) filter.currentLocation = { $regex: escapeRegex(location), $options: 'i' }
     if (openTo) {
       const normalized = openTo.toLowerCase().replace(/s$/, '')
       filter.openTo = { $in: [openTo, normalized] }

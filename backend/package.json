@@ -10,7 +10,9 @@
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed": "node src/scripts/seed.js",
-    "seed:full": "node src/scripts/seed.js",
+    "seed:full": "node seed-company.js && node seed-demo-users.js && node src/scripts/seed.js",
+    "seed:company": "node seed-company.js",
+    "seed:demo-users": "node seed-demo-users.js",
     "check-alerts": "node src/scripts/checkSavedSearchAlerts.js",
     "security-audit": "npm audit --audit-level=high",
     "lint": "node --check src/**/*.js"

@@ -45,4 +45,9 @@ function sanitizeFields(obj, keys) {
   }
 }
 
-module.exports = { stripTags, sanitizeFields }
+// Escape special regex characters to prevent ReDoS injection
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+module.exports = { stripTags, sanitizeFields, escapeRegex }

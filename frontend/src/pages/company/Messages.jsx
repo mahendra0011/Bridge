@@ -175,10 +175,25 @@ export default function CompanyMessages() {
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
   }, [searchParams, user, setSearchParams])
 
-  useEffect(() => {
+useEffect(() => {
     activeIdRef.current = activeConv?._id || null
   }, [activeConv])
 
+  // Auto-scroll on initial load only, not on loadMore
+  const shouldAutoScrollRef = useRef(true)
+  useEffect(() => {
+      if (shouldAutoScrollRef.current && activeConv && messages.length > 0) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        shouldAutoScrollRef.current = false
+      }
+    }, [messages, activeConv])
+
+  // Reset auto-scroll flag when changing conversations
+  useEffect(() => {
+      shouldAutoScrollRef.current = true
+    }, [activeConv])
+
+  // Load messages when conversation changes
   useEffect(() => {
     if (activeConv) {
       setMsgLoading(true)
@@ -193,16 +208,11 @@ export default function CompanyMessages() {
         .catch(() => {})
         .finally(() => setMsgLoading(false))
       emit('conversation:join', { conversationId: activeConv._id })
-      api.post(`/api/company/conversations/${activeConv._id}/read`).catch(() => {})
     }
     return () => {
       if (activeConv) emit('conversation:leave', { conversationId: activeConv._id })
     }
   }, [activeConv, emit])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -361,9 +371,9 @@ export default function CompanyMessages() {
     }
   }
 
-  const handleDeleteCanned = async (index) => {
+  const handleDeleteCanned = async (replyId) => {
     try {
-      const data = await api.delete(`/api/company/canned-replies/${index}`)
+      const data = await api.delete(`/api/company/canned-replies/${replyId}`)
       setCannedReplies(data.cannedReplies || [])
     } catch (err) {
       toast.error(err.message || 'Failed to delete')
@@ -634,21 +644,21 @@ export default function CompanyMessages() {
                   )}
                   <div className="border-t border-slate-200 bg-white px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" ref={fileInputRef} className="hidden" onChange={async (e) => {
-                      const file = e.target.files[0]
-                      if (!file) return
-                      if (file.size > 10 * 1024 * 1024) { toast.error('File must be under 10MB.'); return }
-                      const fd = new FormData()
-                      fd.append('document', file)
-                      fd.append('name', file.name)
-                      try {
-                        const res = await api.post('/api/company/documents/upload', fd, { isFormData: true })
-                        const url = res.documents?.[res.documents.length - 1]?.url
-                        if (url) {
-                          const data = await api.post(`/api/company/conversations/${activeConv._id}/messages`, {
-                            text: `Sent: ${file.name}`,
-                            attachments: [{ name: file.name, url, type: file.type.includes('resume') ? 'resume' : 'other' }],
-                          })
+<input type="file" accept=".pdf,.doc,.docx,.png,.jpg" ref={fileInputRef} className="hidden" onChange={async (e) => {
+                       const file = e.target.files[0]
+                       if (!file) return
+                       if (file.size > 10 * 1024 * 1024) { toast.error('File must be under 10MB.'); return }
+                       const fd = new FormData()
+                       fd.append('document', file)
+                       fd.append('name', file.name)
+                       try {
+                         const res = await api.post('/api/company/conversations/attachments', fd, { isFormData: true })
+                         const url = res.fileUrl
+                         if (url) {
+                           const data = await api.post(`/api/company/conversations/${activeConv._id}/messages`, {
+                             text: `Sent: ${file.name}`,
+                             attachments: [{ name: file.name, url, type: file.type.includes('resume') ? 'resume' : 'other' }],
+                           })
                           if (data?.message) {
                             setMessages((prev) => [...prev, data.message])
                             setConversations((prev) =>
@@ -693,7 +703,7 @@ export default function CompanyMessages() {
                                       <p className="text-xs font-bold text-foreground">{cr.title}</p>
                                       <p className="truncate text-[10px] text-slate-500">{cr.body}</p>
                                     </button>
-                                    <button onClick={() => handleDeleteCanned(i)} className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-rose-500 group-hover:opacity-100">
+                                    <button onClick={() => handleDeleteCanned(cr._id)} className="shrink-0 rounded p-1 text-slate-300 opacity-0 hover:text-rose-500 group-hover:opacity-100">
                                       <X className="size-3" />
                                     </button>
                                   </div>

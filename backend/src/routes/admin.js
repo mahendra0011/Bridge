@@ -1,6 +1,7 @@
 const router = require('express').Router()
 const { protect, restrictTo } = require('../middleware/auth')
 const { logAudit } = require('../middleware/audit')
+const { escapeRegex } = require('../utils/sanitize')
 const User = require('../models/User')
 const Company = require('../models/Company')
 const StudentProfile = require('../models/StudentProfile')
@@ -136,8 +137,8 @@ router.get('/students', async (req, res) => {
     const { page = 1, limit = 20, search } = req.query
     const filter = { role: 'student' }
     if (search) filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } }
+      { name: { $regex: escapeRegex(search), $options: 'i' } },
+      { email: { $regex: escapeRegex(search), $options: 'i' } }
     ]
     const students = await User.find(filter).sort('-createdAt').skip((page - 1) * limit).limit(Number(limit))
     const total = await User.countDocuments(filter)
@@ -189,8 +190,8 @@ router.get('/companies', async (req, res) => {
     const { page = 1, limit = 20, search, verified } = req.query
     const filter = { role: 'company' }
     if (search) filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } }
+      { name: { $regex: escapeRegex(search), $options: 'i' } },
+      { email: { $regex: escapeRegex(search), $options: 'i' } }
     ]
     const users = await User.find(filter).sort('-createdAt').skip((page - 1) * limit).limit(Number(limit))
     const total = await User.countDocuments(filter)
@@ -325,7 +326,8 @@ router.get('/flagged-messages', async (req, res) => {
   try {
     const Message = require('../models/Message')
     const { page = 1, limit = 20 } = req.query
-    const filter = { redFlagged: true }
+    // Only show unreviewed flagged messages
+    const filter = { redFlagged: true, redFlagReviewedBy: { $exists: false } }
     const messages = await Message.find(filter)
       .populate('sender', 'name email')
       .populate('conversation', 'participants')

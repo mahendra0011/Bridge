@@ -82,13 +82,18 @@ if (isProduction) {
   })
 }
 // CORS - strict mode with exact origin matching
+// Normalize origins: treat localhost:5173 and 127.0.0.1:5173 as equivalent in dev
+const normalizeOrigin = (origin) => origin?.replace('127.0.0.1', 'localhost')
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGIN === '*' || (Array.isArray(ALLOWED_ORIGIN) && ALLOWED_ORIGIN.includes(origin))) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
+    if (!origin) return callback(null, true)
+    if (ALLOWED_ORIGIN === '*') return callback(null, true)
+    const normalized = normalizeOrigin(origin)
+    const allowed = Array.isArray(ALLOWED_ORIGIN) ? ALLOWED_ORIGIN : [ALLOWED_ORIGIN]
+    const isAllowed = allowed.some(o => normalizeOrigin(o) === normalized)
+    if (isAllowed) return callback(null, true)
+    callback(new Error('Not allowed by CORS'))
   },
   credentials: true
 }

@@ -72,9 +72,9 @@ const companySchema = new mongoose.Schema({
   otwInviteDate:  { type: Date },
 
   cannedReplies: [{
+    _id: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
     title: { type: String },
     body:  { type: String },
-    _id:   false,
   }],
 
   settings: { type: mongoose.Schema.Types.Mixed, default: {} },

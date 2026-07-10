@@ -3,6 +3,7 @@ const BasePosting = require('../models/BasePosting')
 const Job = require('../models/Job')
 const Internship = require('../models/Internship')
 const Opportunity = require('../models/Opportunity')
+const { escapeRegex } = require('../utils/sanitize')
 
 // GET /api/opportunities - List all opportunities
 router.get('/', async (req, res) => {
@@ -12,11 +13,11 @@ router.get('/', async (req, res) => {
     const filter = {}
     if (query) {
       filter.$or = [
-        { title: { $regex: query, $options: 'i' } },
-        { role: { $regex: query, $options: 'i' } },
+        { title: { $regex: escapeRegex(query), $options: 'i' } },
+        { role: { $regex: escapeRegex(query), $options: 'i' } },
       ]
     }
-    if (location) filter.location = { $regex: location, $options: 'i' }
+    if (location) filter.location = { $regex: escapeRegex(location), $options: 'i' }
     if (mode) filter.mode = mode
     if (poster) filter.poster = poster
 

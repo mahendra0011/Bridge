@@ -11,7 +11,8 @@ router.get('/', async (req, res) => {
 
     if (!q.trim()) return res.json({ results: [] })
 
-    const regex = { $regex: q, $options: 'i' }
+    const { escapeRegex } = require('../utils/sanitize')
+    const regex = { $regex: escapeRegex(q), $options: 'i' }
     const status = { status: 'approved' }
 
     const [internships, jobs, companies] = await Promise.all([

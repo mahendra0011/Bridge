@@ -65,27 +65,42 @@ module.exports = (io) => {
     })
 
     // Typing indicators
-    socket.on('typing:start', ({ conversationId }) => {
-      socket.to(`conv:${conversationId}`).emit('typing:start', {
-        conversationId,
-        userId: socket.userId,
-      })
+    socket.on('typing:start', async ({ conversationId }) => {
+      if (conversationId) {
+        const conv = await Conversation.findById(conversationId).select('participants').lean()
+        if (conv && conv.participants.some(p => String(p) === String(socket.userId))) {
+          socket.to(`conv:${conversationId}`).emit('typing:start', {
+            conversationId,
+            userId: socket.userId,
+          })
+        }
+      }
     })
 
-    socket.on('typing:stop', ({ conversationId }) => {
-      socket.to(`conv:${conversationId}`).emit('typing:stop', {
-        conversationId,
-        userId: socket.userId,
-      })
+    socket.on('typing:stop', async ({ conversationId }) => {
+      if (conversationId) {
+        const conv = await Conversation.findById(conversationId).select('participants').lean()
+        if (conv && conv.participants.some(p => String(p) === String(socket.userId))) {
+          socket.to(`conv:${conversationId}`).emit('typing:stop', {
+            conversationId,
+            userId: socket.userId,
+          })
+        }
+      }
     })
 
     // Read receipts
-    socket.on('message:read', ({ conversationId, messageIds }) => {
-      socket.to(`conv:${conversationId}`).emit('message:read', {
-        conversationId,
-        messageIds,
-        userId: socket.userId,
-      })
+    socket.on('message:read', async ({ conversationId, messageIds }) => {
+      if (conversationId) {
+        const conv = await Conversation.findById(conversationId).select('participants').lean()
+        if (conv && conv.participants.some(p => String(p) === String(socket.userId))) {
+          socket.to(`conv:${conversationId}`).emit('message:read', {
+            conversationId,
+            messageIds,
+            userId: socket.userId,
+          })
+        }
+      }
     })
 
     socket.on('disconnect', () => {

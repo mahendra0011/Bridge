@@ -1,12 +1,13 @@
 const router = require('express').Router()
 const path = require('path')
 const fs = require('fs')
-const { sanitizeFields } = require('../utils/sanitize')
+const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
 const { protect, restrictTo } = require('../middleware/auth')
 const { uploadLogo, uploadDocument, getFileUrl, deleteOldAsset } = require('../middleware/upload')
 const Company = require('../models/Company')
 const Internship = require('../models/Internship')
 const Job = require('../models/Job')
+const Opportunity = require('../models/Opportunity')
 const Application = require('../models/Application')
 const StudentProfile = require('../models/StudentProfile')
 const Conversation = require('../models/Conversation')
@@ -191,15 +192,24 @@ router.post('/logo', checkPermission('edit_company_profile'), (req, res) => {
 })
 
 router.post('/documents/upload', checkPermission('edit_company_profile'), (req, res) => {
-  uploadDocument(req, res, async (err) => {
-    if (err) return res.status(400).json({ message: err.message })
-    const fileUrl = getFileUrl(req, 'documents')
-    const { name } = req.body
-    req.company.documents.push({ name: name || req.file.originalname, url: fileUrl })
-    await req.company.save()
-    res.json({ documents: req.company.documents })
-  })
-})
+   uploadDocument(req, res, async (err) => {
+     if (err) return res.status(400).json({ message: err.message })
+     const fileUrl = getFileUrl(req, 'documents')
+     const { name } = req.body
+     req.company.documents.push({ name: name || req.file.originalname, url: fileUrl })
+     await req.company.save()
+     res.json({ documents: req.company.documents })
+   })
+ })
+
+// POST /api/company/conversations/attachments - Upload for chat (no profile docs pollution)
+router.post('/conversations/attachments', checkPermission('send_messages'), (req, res) => {
+   uploadDocument(req, res, async (err) => {
+     if (err) return res.status(400).json({ message: err.message })
+     const fileUrl = getFileUrl(req, 'documents')
+     res.json({ fileUrl })
+   })
+ })
 
 router.delete('/documents/:docId', checkPermission('edit_company_profile'), async (req, res) => {
   try {
@@ -785,24 +795,35 @@ function scanRedFlags(text) {
 }
 
 async function notifyViaEmailIfOffline(io, recipientId, senderName, conversationId) {
-  try {
-    const status = io.getOnlineStatus(String(recipientId))
-    if (status.online) return
+   try {
+     const status = io.getOnlineStatus(String(recipientId))
+     if (status.online) return
 
-    const recipient = await User.findById(recipientId).select('name email role')
-    if (!recipient?.email) return
+     const recipient = await User.findById(recipientId).select('name email role')
+     if (!recipient?.email) return
 
-    if (recipient.role === 'student') {
-      const profile = await StudentProfile.findOne({ user: recipientId }).select('settings')
-      const digest = profile?.settings?.messageDigest || 'instant'
-      if (digest !== 'instant') return
-    }
+     // Check digest preference for all non-student recipients
+     if (recipient.role === 'student') {
+       const profile = await StudentProfile.findOne({ user: recipientId }).select('settings')
+       const digest = profile?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     } else if (recipient.role === 'company') {
+       const Company = require('../models/Company')
+       const company = await Company.findOne({ user: recipientId }).select('settings')
+       const digest = company?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     } else if (recipient.role === 'agency') {
+       const Agency = require('../models/Agency')
+       const agency = await Agency.findOne({ user: recipientId }).select('settings')
+       const digest = agency?.settings?.messageDigest || 'instant'
+       if (digest !== 'instant') return
+     }
 
-    const path = recipient.role === 'student' ? '/dashboard/messages' : `/${recipient.role}/messages`
-    const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
-    const content = newMessageEmail(recipient.name, senderName, link)
-    await sendEmail({ to: recipient.email, ...content })
-  } catch {} // silently fail — email is best-effort
+const path = recipient.role === 'student' ? `/dashboard/messages/${conversationId}` : `/${recipient.role}/messages/${conversationId}`
+      const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/#${path}`
+     const content = newMessageEmail(recipient.name, senderName, link)
+     await sendEmail({ to: recipient.email, ...content })
+   } catch {} // silently fail — email is best-effort
 }
 
 // GET /api/company/conversations
@@ -847,21 +868,22 @@ router.get('/conversations/:convId/messages', checkPermission('view_messages'), 
 
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50))
-    const skip = (page - 1) * limit
 
-    const [messages, total] = await Promise.all([
-      Message.find({ conversation: req.params.convId })
-        .populate('sender', 'name email role')
-        .sort('createdAt')
-        .skip(skip)
-        .limit(limit),
-      Message.countDocuments({ conversation: req.params.convId }),
-    ])
+    const total = await Message.countDocuments({ conversation: req.params.convId })
 
-    await Message.updateMany(
-      { conversation: req.params.convId, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
-      { $addToSet: { readBy: req.user._id } }
-    )
+    const messages = await Message.find({ conversation: req.params.convId })
+      .populate('sender', 'name email role')
+      .sort('-createdAt')
+      .skip((total - page * limit))
+      .limit(limit)
+
+    const messageIds = messages.map(m => m._id)
+    if (messageIds.length > 0) {
+      await Message.updateMany(
+        { _id: { $in: messageIds }, sender: { $ne: req.user._id }, readBy: { $ne: req.user._id } },
+        { $addToSet: { readBy: req.user._id } }
+      )
+    }
 
     conv.unreadCount.set(String(req.user._id), 0)
     await conv.save()
@@ -888,8 +910,8 @@ router.get('/conversations/:convId/search', checkPermission('view_messages'), as
       conversation: req.params.convId,
       messageType: { $ne: 'system' },
       $or: [
-        { text: { $regex: q, $options: 'i' } },
-        { 'attachments.name': { $regex: q, $options: 'i' } },
+        { text: { $regex: escapeRegex(q), $options: 'i' } },
+        { 'attachments.name': { $regex: escapeRegex(q), $options: 'i' } },
       ],
     })
       .populate('sender', 'name email role')
@@ -907,6 +929,26 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
     const { text, postingId, applicationId } = req.body
     if (!text?.trim()) return res.status(400).json({ message: 'Message text is required' })
 
+    // Require valid relationship: application, invite, or posting context
+    // Get company's own posting IDs
+    const companyPostings = await Promise.all([
+      Job.find({ company: req.company._id }).select('_id').lean(),
+      Internship.find({ company: req.company._id }).select('_id').lean()
+    ])
+    const jobIds = companyPostings[0].map(j => j._id)
+    const internshipIds = companyPostings[1].map(i => i._id)
+
+    // Check application to THIS company's postings only
+    const hasApplication = await Application.findOne({
+      student: studentUserId,
+      $or: [{ job: { $in: jobIds } }, { internship: { $in: internshipIds } }]
+    })
+    const hasInvite = req.company.invitedCandidates?.some((inv) => String(inv.user) === String(studentUserId))
+
+    if (!applicationId && !postingId && !hasApplication && !hasInvite) {
+      return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
+    }
+
     // Check blocks
     const studentProfile = await StudentProfile.findOne({ user: studentUserId }).select('blockedUsers')
     const companyBlocked = req.company.blockedUsers?.some((id) => String(id) === String(studentUserId))
@@ -921,14 +963,25 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
     })
 
     if (!conv) {
+      let postingModel = undefined
+      if (postingId && !applicationId) {
+        if (await Job.findById(postingId)) postingModel = 'Job'
+        else if (await Internship.findById(postingId)) postingModel = 'Internship'
+        else if (await Opportunity.findById(postingId)) postingModel = 'Opportunity'
+      }
       conv = await Conversation.create({
         participants: [req.user._id, studentUserId],
         posting: postingId || undefined,
-        postingModel: postingId ? (applicationId ? undefined : 'Job') : undefined,
+        postingModel,
         application: applicationId || undefined,
         initiatedBy: 'recruiter',
         status: 'active',
       })
+    }
+
+    // Block check: conversation blocked by either party
+    if (conv.status === 'blocked') {
+      return res.status(403).json({ message: 'Conversation is blocked' })
     }
 
     const redFlagReasons = scanRedFlags(text)
@@ -973,7 +1026,7 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
 // POST /api/company/conversations/direct — Start or find a direct conversation
 router.post('/conversations/direct', checkPermission('send_messages'), async (req, res) => {
   try {
-    const { userId } = req.body
+    const { userId, postingId, applicationId } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
     if (String(userId) === String(req.user._id)) {
       return res.status(400).json({ message: 'Cannot start conversation with yourself' })
@@ -985,6 +1038,24 @@ router.post('/conversations/direct', checkPermission('send_messages'), async (re
     const studentBlocked = studentProfile?.blockedUsers?.some((id) => String(id) === String(req.user._id))
     if (studentBlocked || companyBlocked) {
       return res.status(403).json({ message: 'Unable to start conversation' })
+    }
+
+    // Require valid relationship: either the student applied to this company's posting, or was invited
+    const companyPostings = await Promise.all([
+      Job.find({ company: req.company._id }).select('_id').lean(),
+      Internship.find({ company: req.company._id }).select('_id').lean()
+    ])
+    const jobIds = companyPostings[0].map(j => j._id)
+    const internshipIds = companyPostings[1].map(i => i._id)
+
+    const hasApplication = await Application.findOne({
+      student: userId,
+      $or: [{ job: { $in: jobIds } }, { internship: { $in: internshipIds } }],
+    })
+    const hasInvite = req.company.invitedCandidates?.some((inv) => String(inv.user) === String(userId))
+
+    if (!hasApplication && !hasInvite && !applicationId && !postingId) {
+      return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
     }
 
     let conv = await Conversation.findOne({
@@ -1117,8 +1188,16 @@ router.post('/conversations/:convId/block', checkPermission('send_messages'), as
     conv.status = 'blocked'
     await conv.save()
 
-    const io = req.app.get('io')
+    // Add blocked user to company's blockedUsers array for account-level blocking
     const otherId = conv.participants.find((p) => String(p) !== String(req.user._id))
+    if (otherId) {
+      await Company.updateOne(
+        { _id: req.company._id, blockedUsers: { $ne: otherId } },
+        { $addToSet: { blockedUsers: otherId } }
+      )
+    }
+
+    const io = req.app.get('io')
     if (io && otherId) {
       io.sendNotification(String(otherId), {
         title: 'Conversation Blocked',
@@ -1202,20 +1281,24 @@ router.post('/canned-replies', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
-// DELETE /api/company/canned-replies/:index
-router.delete('/canned-replies/:index', async (req, res) => {
+// DELETE /api/company/canned-replies/:id
+router.delete('/canned-replies/:id', async (req, res) => {
   try {
-    const index = parseInt(req.params.index)
-    if (isNaN(index) || index < 0) {
-      return res.status(400).json({ message: 'Invalid index' })
-    }
     if (!req.company) return res.status(404).json({ message: 'Company not found' })
-    if (index >= req.company.cannedReplies.length) {
-      return res.status(404).json({ message: 'Canned reply not found at this index' })
+    const replyId = req.params.id
+
+    // Use atomic $pull to avoid race condition with concurrent deletes
+    const updated = await Company.findOneAndUpdate(
+      { _id: req.company._id, cannedReplies: { $elemMatch: { _id: replyId } } },
+      { $pull: { cannedReplies: { _id: replyId } } },
+      { new: true }
+    ).select('cannedReplies')
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Canned reply not found' })
     }
-    req.company.cannedReplies.splice(index, 1)
-    await req.company.save()
-    res.json({ cannedReplies: req.company.cannedReplies })
+
+    res.json({ cannedReplies: updated.cannedReplies })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 

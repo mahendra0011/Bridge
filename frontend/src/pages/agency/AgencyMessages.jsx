@@ -41,10 +41,12 @@ export default function AgencyMessages() {
   const [typingUsers, setTypingUsers] = useState(new Set())
   const [replyToMessage, setReplyToMessage] = useState(null)
   const [showTextEmojiPicker, setShowTextEmojiPicker] = useState(false)
-  const textEmojiPickerRef = useRef(null)
-  const activeIdRef = useRef(null)
-  const messagesEndRef = useRef(null)
-  const typingTimeoutRef = useRef(null)
+const textEmojiPickerRef = useRef(null)
+   const activeIdRef = useRef(null)
+   const messagesEndRef = useRef(null)
+   const typingTimeoutRef = useRef(null)
+   const fileInputRef = useRef(null)
+   const messagesContainerRef = useRef(null)
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
@@ -134,22 +136,8 @@ export default function AgencyMessages() {
   }, [searchParams, user, setSearchParams])
 
 useEffect(() => {
-     activeIdRef.current = activeChat?._id || null
-   }, [activeChat])
-
-useEffect(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
-
-    useEffect(() => {
-      const handleClickOutside = (e) => {
-        if (textEmojiPickerRef.current && !textEmojiPickerRef.current.contains(e.target)) {
-          setShowTextEmojiPicker(false)
-        }
-      }
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+      activeIdRef.current = activeChat?._id || null
+    }, [activeChat])
 
   const loadMessages = async (chatId) => {
     setPage(1)
@@ -167,32 +155,61 @@ useEffect(() => {
   const loadMoreMessages = async () => {
     if (!hasMore || !activeChat) return
     const nextPage = page + 1
+    const prevScrollHeight = messagesContainerRef.current?.scrollHeight || 0
     try {
       const data = await api.get(`/api/agency/conversations/${activeChat._id}/messages?page=${nextPage}&limit=50`)
       setMessages(prev => [...(data.messages || []), ...prev])
       setPage(nextPage)
       setHasMore(nextPage < data.totalPages)
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight - prevScrollHeight
+        }
+      }, 50)
     } catch (err) {}
   }
 
+  // Auto-scroll on initial load and new sent messages (not loadMore)
+  const shouldAutoScrollRef = useRef(true)
   useEffect(() => {
-    if (activeChat) {
-      loadMessages(activeChat._id)
-      emit('conversation:join', { conversationId: activeChat._id })
-      api.post(`/api/agency/conversations/${activeChat._id}/read`).catch(() => {})
-    }
-    return () => {
-      if (activeChat) {
-        emit('conversation:leave', { conversationId: activeChat._id })
+      if (shouldAutoScrollRef.current && activeChat && messages.length > 0) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        shouldAutoScrollRef.current = false
       }
-    }
-  }, [activeChat, emit])
+    }, [messages, activeChat])
+
+  // Reset auto-scroll flag when changing conversations
+  useEffect(() => {
+      shouldAutoScrollRef.current = true
+    }, [activeChat])
+
+  useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (textEmojiPickerRef.current && !textEmojiPickerRef.current.contains(e.target)) {
+          setShowTextEmojiPicker(false)
+        }
+      }
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+useEffect(() => {
+     if (activeChat) {
+       loadMessages(activeChat._id)
+       emit('conversation:join', { conversationId: activeChat._id })
+     }
+     return () => {
+       if (activeChat) {
+         emit('conversation:leave', { conversationId: activeChat._id })
+       }
+     }
+   }, [activeChat, emit])
 
   const openChat = (conv) => {
     setActiveChat(conv)
   }
 
-  const handleSend = async () => {
+const handleSend = async () => {
     if (!newMessage.trim() || !activeChat) return
     setSending(true)
     const currentReply = replyToMessage
@@ -218,6 +235,37 @@ useEffect(() => {
       toast.error('Failed to send')
       setMessages(prev => prev.filter(m => m._id !== tempMsg._id))
     } finally { setSending(false) }
+  }
+
+  const handleFileUpload = async (file) => {
+    if (!file || !activeChat) return
+    setSending(true)
+    const fd = new FormData()
+    fd.append('document', file)
+    fd.append('name', file.name)
+    try {
+      const res = await api.post('/api/agency/conversations/attachments', fd, { isFormData: true })
+      if (res.fileUrl) {
+        const data = await api.post(`/api/agency/conversations/${activeChat._id}/messages`, {
+          text: `Sent: ${file.name}`,
+          attachments: [{ name: file.name, url: res.fileUrl, type: 'other' }],
+        })
+        if (data?.message) {
+          setMessages((prev) => [...prev, data.message])
+          setConversations((prev) =>
+            prev.map((c) =>
+              c._id === activeChat._id
+                ? { ...c, lastMessage: data.message.text, lastMessageAt: data.message.createdAt, lastSender: user._id }
+                : c
+            )
+          )
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to upload file')
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleReact = async (msgId, emoji) => {
@@ -347,9 +395,14 @@ useEffect(() => {
               onUnpin={handlePinMessage}
             />
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-5 space-y-3">
-              {messages.length === 0 ? (
+{/* Messages */}
+             <div className="flex-1 overflow-y-auto bg-slate-50/50 p-5 space-y-3" ref={messagesContainerRef}>
+               {hasMore && (
+                 <div className="flex justify-center py-2">
+                   <button onClick={loadMoreMessages} className="text-xs font-semibold text-primary hover:underline">Load older messages</button>
+                 </div>
+               )}
+               {messages.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-400">
                   <MessageSquare className="mr-2 size-5" /> Start a conversation
                 </div>
@@ -390,7 +443,17 @@ useEffect(() => {
             {/* Chat Input */}
             <div className="border-t border-slate-200 bg-white p-4">
               <div className="flex items-center gap-2">
-                <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Paperclip className="size-5" /></button>
+                <button onClick={() => fileInputRef.current?.click()} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" title="Attach file">
+                  <Paperclip className="size-5" />
+                </button>
+                <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" className="hidden" ref={fileInputRef} onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (file && file.size <= 10 * 1024 * 1024) {
+                    await handleFileUpload(file)
+                  } else if (file) {
+                    toast.error('File must be under 10MB')
+                  }
+                }} />
                 <div className="relative flex-1" ref={textEmojiPickerRef}>
                   <input value={newMessage} onChange={e => { setNewMessage(e.target.value); handleTyping() }}
                     placeholder="Type a message..."
