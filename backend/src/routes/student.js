@@ -166,9 +166,13 @@ router.get('/saved', async (req, res) => {
     const profile = await StudentProfile.findOne({ user: req.user._id })
       .populate('savedJobs')
       .populate('savedInternships')
+      .populate('savedCompanies')
+      .populate('savedOpportunities')
     res.json({
       savedJobs: profile?.savedJobs || [],
       savedInternships: profile?.savedInternships || [],
+      savedCompanies: profile?.savedCompanies || [],
+      savedOpportunities: profile?.savedOpportunities || [],
     })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
@@ -177,8 +181,9 @@ router.get('/saved', async (req, res) => {
 router.post('/saved/:kind/:id', async (req, res) => {
   try {
     const { kind, id } = req.params
-    if (!['job', 'internship'].includes(kind)) return res.status(400).json({ message: 'Invalid kind' })
-    const field = kind === 'job' ? 'savedJobs' : 'savedInternships'
+    const kindMap = { job: 'savedJobs', internship: 'savedInternships', company: 'savedCompanies', opportunity: 'savedOpportunities' }
+    const field = kindMap[kind]
+    if (!field) return res.status(400).json({ message: 'Invalid kind' })
 
     const profile = await StudentProfile.findOneAndUpdate(
       { user: req.user._id }, {}, { upsert: true, new: true }
@@ -190,7 +195,7 @@ router.post('/saved/:kind/:id', async (req, res) => {
       profile[field].push(id)
     }
     await profile.save()
-    res.json({ saved: !already, savedJobs: profile.savedJobs, savedInternships: profile.savedInternships })
+    res.json({ saved: !already, savedJobs: profile.savedJobs, savedInternships: profile.savedInternships, savedCompanies: profile.savedCompanies, savedOpportunities: profile.savedOpportunities })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
@@ -199,8 +204,9 @@ router.post('/saved/:kind/:id', async (req, res) => {
     try {
       const { posting, postingType } = req.body
       if (!posting || !postingType) return res.status(400).json({ message: 'posting and postingType required' })
-      if (!['job', 'internship'].includes(postingType)) return res.status(400).json({ message: 'Invalid postingType' })
-      const field = postingType === 'job' ? 'savedJobs' : 'savedInternships'
+      const typeMap = { job: 'savedJobs', internship: 'savedInternships', company: 'savedCompanies', opportunity: 'savedOpportunities' }
+      const field = typeMap[postingType]
+      if (!field) return res.status(400).json({ message: 'Invalid postingType' })
       const profile = await StudentProfile.findOneAndUpdate(
         { user: req.user._id }, {}, { upsert: true, new: true }
       )
@@ -211,7 +217,7 @@ router.post('/saved/:kind/:id', async (req, res) => {
         profile[field].push(posting)
       }
       await profile.save()
-      res.json({ saved: !already, savedJobs: profile.savedJobs, savedInternships: profile.savedInternships })
+      res.json({ saved: !already, savedJobs: profile.savedJobs, savedInternships: profile.savedInternships, savedCompanies: profile.savedCompanies, savedOpportunities: profile.savedOpportunities })
     } catch (err) { res.status(500).json({ message: err.message }) }
   })
 
@@ -222,6 +228,8 @@ router.post('/saved/:kind/:id', async (req, res) => {
       if (!profile) return res.status(404).json({ message: 'Profile not found' })
       profile.savedJobs = profile.savedJobs?.filter((x) => String(x) !== String(req.params.id)) || []
       profile.savedInternships = profile.savedInternships?.filter((x) => String(x) !== String(req.params.id)) || []
+      profile.savedCompanies = profile.savedCompanies?.filter((x) => String(x) !== String(req.params.id)) || []
+      profile.savedOpportunities = profile.savedOpportunities?.filter((x) => String(x) !== String(req.params.id)) || []
       await profile.save()
       res.json({ saved: false })
     } catch (err) { res.status(500).json({ message: err.message }) }

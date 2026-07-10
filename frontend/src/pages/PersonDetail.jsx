@@ -159,17 +159,14 @@ export default function PersonDetail() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    console.log('[PersonDetail] Fetching person:', id)
     api.get(`/api/person/${id}`)
       .then(data => {
         if (cancelled) return
-        console.log('[PersonDetail] API response:', JSON.stringify(data).slice(0, 200))
         setPerson(data.person || data)
         setReviewStats(data.reviewStats || { avgRating: 0, count: 0 })
       })
       .catch(err => {
         if (cancelled) return
-        console.error('[PersonDetail] Fetch error:', err.status, err.message, err.data)
         toast.error(err.message || 'Person not found')
       })
       .finally(() => { if (!cancelled) setLoading(false) })

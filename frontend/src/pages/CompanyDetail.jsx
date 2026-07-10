@@ -245,7 +245,7 @@ export default function CompanyDetail() {
     if (!user) { toast.error('Log in to follow this company'); return }
     try {
       if (saved) {
-        await api.delete(`/api/student/saved/company/${companyId}`)
+        await api.delete(`/api/student/saved/${companyId}`)
         setSaved(false)
         toast.success('Unfollowed')
       } else {

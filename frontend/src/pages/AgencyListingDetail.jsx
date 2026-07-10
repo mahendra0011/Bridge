@@ -563,14 +563,16 @@ export default function AgencyListingDetail() {
                     </Button>
                     {isDeadlinePassed || listing.status === 'closed' ? (
                       <Button onClick={async () => {
-                        try { await api.put(`/api/${kind}s/${id}`, { status: 'approved', deadline: undefined }); toast.success('Reopened!'); window.location.reload() }
+                        const plural = kind === 'opportunity' ? 'opportunities' : `${kind}s`
+                        try { await api.put(`/api/${plural}/${id}`, { status: 'approved', deadline: undefined }); toast.success('Reopened!'); window.location.reload() }
                         catch (e) { toast.error(e.message) }
                       }} variant="ghost" className="rounded-xl border border-emerald-200 px-4 py-2 font-bold text-emerald-600 hover:bg-emerald-50">
                         <RefreshCw className="size-4" /> Reopen
                       </Button>
                     ) : (
                       <Button onClick={async () => {
-                        try { await api.delete(`/api/${kind}s/${id}`); toast.success('Closed'); navigate('/agency/dashboard') }
+                        const plural = kind === 'opportunity' ? 'opportunities' : `${kind}s`
+                        try { await api.delete(`/api/${plural}/${id}`); toast.success('Closed'); navigate('/agency/dashboard') }
                         catch (e) { toast.error(e.message) }
                       }} variant="ghost" className="rounded-xl border border-slate-200 px-4 py-2 font-bold text-rose-600 hover:bg-rose-50">
                         <XCircle className="size-4" /> Close Early

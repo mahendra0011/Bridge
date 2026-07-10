@@ -765,9 +765,21 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </HashRouter>
       </AuthProvider>
     </Provider>
+  )
+}
+
+function NotFound() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 text-center">
+      <h1 className="text-7xl font-black tracking-tight text-slate-200">404</h1>
+      <p className="mt-2 text-lg font-bold text-slate-800">Page not found</p>
+      <p className="mt-1 text-sm text-slate-500">This page doesn't exist or has been moved.</p>
+      <a href="/#/" className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors">Go home</a>
+    </div>
   )
 }

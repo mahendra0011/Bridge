@@ -2,6 +2,23 @@ const router = require('express').Router()
 const Internship = require('../models/Internship')
 const Job = require('../models/Job')
 const Company = require('../models/Company')
+const { escapeRegex } = require('../utils/sanitize')
+
+// GET /api/search/companies?industry=...&limit=4
+router.get('/companies', async (req, res) => {
+  try {
+    const { industry, limit = 4 } = req.query
+    const filter = {}
+    if (industry) filter.industry = { $regex: escapeRegex(industry), $options: 'i' }
+    const companies = await Company.find(filter)
+      .select('name industry location logoUrl')
+      .limit(Math.min(Number(limit) || 4, 20))
+      .lean()
+    res.json({ companies })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
 
 // GET /api/search?q=react&limit=5
 router.get('/', async (req, res) => {

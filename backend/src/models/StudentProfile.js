@@ -24,6 +24,8 @@ const studentProfileSchema = new mongoose.Schema({
   savedJobs:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
   savedInternships: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Internship' }],
   savedPersons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  savedCompanies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Company' }],
+  savedOpportunities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Opportunity' }],
   experience: [{
     company:    { type: String, required: true },
     role:       { type: String, required: true },
