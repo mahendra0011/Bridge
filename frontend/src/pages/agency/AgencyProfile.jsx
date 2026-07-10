@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Building2, Edit3, Plus, Trash2, X, Check, Save,
   Globe, MapPin, Phone, Mail, Image, ExternalLink,
-  FolderOpen, Briefcase, Star, Users
+  FolderOpen, Briefcase, Star, Users, Upload
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
@@ -23,6 +23,11 @@ export default function AgencyProfile() {
   const [portfolioForm, setPortfolioForm] = useState({ title: '', description: '', imageUrl: '', category: '', link: '' })
   const [editingPortfolioId, setEditingPortfolioId] = useState(null)
   const [newService, setNewService] = useState('')
+  const [logoFile, setLogoFile] = useState(null)
+  const [logoError, setLogoError] = useState('')
+  const [portfolioImageFile, setPortfolioImageFile] = useState(null)
+  const [portfolioImagePreview, setPortfolioImagePreview] = useState('')
+  const fileInputRef = useRef(null)
 
   const loadProfile = () => {
     setLoading(true)
@@ -48,20 +53,7 @@ export default function AgencyProfile() {
 
   useEffect(() => { loadProfile() }, [])
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      const data = await api.put('/api/agency/profile', form)
-      setProfile(data.agency || data.profile || data)
-      setEditing(false)
-      toast.success('Profile updated')
-      if (refreshUser) refreshUser()
-    } catch (err) {
-      toast.error(err.message || 'Failed to save')
-    } finally {
-      setSaving(false)
-    }
-  }
+
 
   const handleAddPortfolio = async () => {
     if (!portfolioForm.title.trim()) return
@@ -137,6 +129,72 @@ export default function AgencyProfile() {
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setLogoError('Only image files allowed')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('Logo must be under 2MB')
+      return
+    }
+    setLogoError('')
+    setLogoFile(file)
+  }
+
+  const handlePortfolioImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files allowed')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB')
+      return
+    }
+    setPortfolioImageFile(file)
+    setPortfolioImagePreview(URL.createObjectURL(file))
+  }
+
+  const uploadPortfolioImage = async () => {
+    if (!portfolioImageFile) return
+    try {
+      const fd = new FormData()
+      fd.append('image', portfolioImageFile)
+      const res = await api.post('/api/agency/portfolio/image', fd, { isFormData: true })
+      setPortfolioForm(p => ({ ...p, imageUrl: res.imageUrl }))
+      setPortfolioImageFile(null)
+      setPortfolioImagePreview('')
+      toast.success('Image uploaded')
+    } catch (err) {
+      toast.error(err.message || 'Failed to upload image')
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      if (logoFile) {
+        const fd = new FormData()
+        fd.append('logo', logoFile)
+        const res = await api.post('/api/agency/logo', fd, { isFormData: true })
+        setProfile(p => ({ ...p, logoUrl: res.logoUrl }))
+        setLogoFile(null)
+      }
+      await api.put('/api/agency/profile', form)
+      setEditing(false)
+      toast.success('Profile updated')
+      if (refreshUser) refreshUser()
+    } catch (err) {
+      toast.error(err.message || 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -180,15 +238,27 @@ export default function AgencyProfile() {
         {/* Agency Details Card */}
         <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
           <div className="flex items-center gap-4 bg-gradient-to-r from-violet-50 to-fuchsia-50 px-6 py-5 border-b border-slate-200">
-            <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-2xl font-bold text-white">
-              {profile?.agencyName ? profile.agencyName.split(' ').map(w => w[0]).slice(0, 2).join('') : 'AG'}
-            </div>
+            {profile?.logoUrl ? (
+              <img src={profile.logoUrl} alt="" className="size-16 shrink-0 rounded-2xl object-cover" />
+            ) : (
+              <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 text-2xl font-bold text-white">
+                {profile?.agencyName ? profile.agencyName.split(' ').map(w => w[0]).slice(0, 2).join('') : 'AG'}
+              </div>
+            )}
             <div>
               <h3 className="text-xl font-bold">{profile?.agencyName || 'Your Agency'}</h3>
               {profile?.city && <p className="text-sm text-slate-500 flex items-center gap-1"><MapPin className="size-3.5" />{profile.city}</p>}
             </div>
           </div>
-
+          {editing && (
+            <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+              <label className="inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                <Upload className="size-4" /> {logoFile ? logoFile.name : 'Upload Logo'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </label>
+              {logoError && <p className="mt-1 text-xs font-semibold text-rose-600">{logoError}</p>}
+            </div>
+          )}
           <div className="p-6 space-y-5">
             {editing ? (
               <>
@@ -382,8 +452,21 @@ export default function AgencyProfile() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Image URL</label>
-                    <input value={portfolioForm.imageUrl} onChange={e => setPortfolioForm(p => ({ ...p, imageUrl: e.target.value }))} placeholder="https://..." className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Image</label>
+                    {portfolioImagePreview || portfolioForm.imageUrl ? (
+                      <div className="mb-2 relative w-24 h-24 rounded-lg overflow-hidden bg-slate-100">
+                        <img src={portfolioImagePreview || portfolioForm.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button onClick={() => { setPortfolioImageFile(null); setPortfolioImagePreview(''); setPortfolioForm(p => ({ ...p, imageUrl: '' })) }}
+                          className="absolute top-1 right-1 rounded-full bg-white p-0.5 text-slate-600 hover:text-rose-600">
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    ) : null}
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                      <Upload className="size-4" /> Upload Image
+                      <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handlePortfolioImageChange} />
+                    </label>
+                    <input value={portfolioForm.imageUrl} onChange={e => setPortfolioForm(p => ({ ...p, imageUrl: e.target.value }))} placeholder="or paste URL" className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Category</label>
@@ -397,7 +480,12 @@ export default function AgencyProfile() {
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <button onClick={() => { setShowPortfolioModal(false); setEditingPortfolioId(null) }} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onClick={editingPortfolioId ? handleUpdatePortfolio : handleAddPortfolio} disabled={!portfolioForm.title.trim()}
+                <button onClick={async () => {
+                  if (portfolioImageFile) {
+                    await uploadPortfolioImage()
+                  }
+                  editingPortfolioId ? handleUpdatePortfolio() : handleAddPortfolio()
+                }} disabled={!portfolioForm.title.trim()}
                   className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60">
                   {editingPortfolioId ? 'Update' : 'Add to Portfolio'}
                 </button>

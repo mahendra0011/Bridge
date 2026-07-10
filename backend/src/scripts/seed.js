@@ -42,6 +42,40 @@ const DEMO_AGENCY = {
 
 // ─── Generator helpers ───────────────────────────────────────────────────────
 
+// ─── Cloudinary Seed Image URLs ───────────────────────────────────────────────────
+const COMPANY_LOGO_URLS = [
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633723/bridge/seed/companyLogos/healthtech-logo.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633724/bridge/seed/companyLogos/techcorp-logo.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633726/bridge/seed/companyLogos/innosoft-logo.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633727/bridge/seed/companyLogos/datasphere-logo.jpg',
+]
+
+const COMPANY_BANNER_URLS = [
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633731/bridge/seed/coverBanners/healthtech-banner.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633733/bridge/seed/coverBanners/techcorp-banner.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633735/bridge/seed/coverBanners/innosoft-banner.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633738/bridge/seed/coverBanners/datasphere-banner.jpg',
+]
+
+const AGENCY_LOGO_URLS = [
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633753/bridge/seed/agencyLogos/demo-talent-agency-logo.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633754/bridge/seed/agencyLogos/creative-solutions-logo.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633755/bridge/seed/agencyLogos/hr-consultants-logo.jpg',
+]
+
+const COMPANY_PHOTO_URLS = [
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633742/bridge/seed/companyPhotos/office-1.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633743/bridge/seed/companyPhotos/office-2.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633744/bridge/seed/companyPhotos/office-3.jpg',
+]
+
+const PORTFOLIO_IMAGE_URLS = [
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633756/bridge/seed/portfolioImages/portfolio-tech.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633758/bridge/seed/portfolioImages/portfolio-hr.jpg',
+  'https://res.cloudinary.com/dfmetzhrk/image/upload/v1783633759/bridge/seed/portfolioImages/portfolio-digital.jpg',
+]
+
+// ─── Demo account credentials ────────────────────────────────────────────────
 const COMPANIES = [
   { name: 'Acme Corp', industry: 'Technology', size: '50-200', location: 'San Francisco, CA' },
   { name: 'TechNova', industry: 'Technology', size: '200-500', location: 'Bangalore, India' },
@@ -338,6 +372,9 @@ async function run() {
       size: '50-200',
       location: 'San Francisco, CA',
       description: 'A leading technology company building innovative solutions.',
+      logoUrl: pick(COMPANY_LOGO_URLS),
+      bannerUrl: pick(COMPANY_BANNER_URLS),
+      photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
       isVerified: true,
     })
     console.log('   Created company profile')
@@ -364,6 +401,8 @@ async function run() {
         size: c.size,
         location: c.location,
         description: `${c.name} is a leading ${c.industry.toLowerCase()} company.`,
+        logoUrl: pick(COMPANY_LOGO_URLS),
+        bannerUrl: pick(COMPANY_BANNER_URLS),
         isVerified: true,
       })
       console.log(`   Created company: ${c.name}`)
@@ -383,6 +422,7 @@ async function run() {
       description: 'Creative Cuts Studio is a Mumbai-based video editing & animation agency. We produce high-quality content for YouTube creators, brands, and media houses.',
       website: 'https://creativecutsstudio.com',
       city: 'Mumbai, India',
+      logoUrl: AGENCY_LOGO_URLS[0],
       services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'],
       teamSize: '6-10',
       portfolioUrl: 'https://creativecutsstudio.com/portfolio',
@@ -393,6 +433,14 @@ async function run() {
       isProfileComplete: true,
       signupStep: 2,
       isVerified: true,
+      portfolio: [
+        {
+          title: 'Brand Video Campaign',
+          description: 'High-quality brand videos for tech startups',
+          imageUrl: pick(PORTFOLIO_IMAGE_URLS),
+          category: 'Video Editing',
+        }
+      ]
     })
     console.log('   Created agency profile: Creative Cuts Studio')
   }

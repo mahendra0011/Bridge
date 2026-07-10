@@ -137,6 +137,18 @@ exports.uploadCommunityMedia = multer({
   }
 }).array('media', 10) // max 10 files
 
+// ─── Portfolio media upload (images for portfolio items) ──────────────────────
+exports.uploadPortfolioMedia = multer({
+  storage: USE_CLOUDINARY
+    ? cloudinaryStorage('portfolio', 'image')
+    : diskStorage('portfolio'),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB for portfolio images
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true)
+    else cb(new Error('Only image files allowed'))
+  }
+}).single('image')
+
 // Helper: delete an old Cloudinary asset by URL (no-op for local)
 exports.deleteOldAsset = async (url) => {
   if (!USE_CLOUDINARY || !url) return

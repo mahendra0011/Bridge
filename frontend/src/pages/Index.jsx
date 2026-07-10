@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useInView, useAnimation, AnimatePresence } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
@@ -15,6 +15,37 @@ import { InternshipCard } from '@/components/site/internship-card'
 import { Button } from '@/components/ui/button'
 
 gsap.registerPlugin(ScrollTrigger)
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+}
+
+const fadeInScale = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }
+}
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1
+    }
+  }
+}
+
+const cardStagger = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+  }
+}
 
 const categoryCards = [
   { name: 'Engineering', icon: Code2, count: 1240, color: 'from-blue-500 to-indigo-600' },
@@ -540,6 +571,36 @@ export default function Index() {
   const featured = featuredJobs
   const featuredLoading = false
   const lenisRef = useRef(null)
+  
+  // Refs for scroll animations
+  const heroRef = useRef(null)
+  const exploreRef = useRef(null)
+  const categoriesRef = useRef(null)
+  const internshipsRef = useRef(null)
+  const jobsRef = useRef(null)
+  const ctaRef = useRef(null)
+  const communityRef = useRef(null)
+  const howItWorksRef = useRef(null)
+  const companiesRef = useRef(null)
+  const statsRef = useRef(null)
+  const testimonialsRef = useRef(null)
+  const faqRef = useRef(null)
+  const finalCtaRef = useRef(null)
+
+  // useInView controls for scroll-triggered animations
+  const heroInView = useInView(heroRef, { once: true, amount: 0.3 })
+  const exploreInView = useInView(exploreRef, { once: true, amount: 0.3 })
+  const categoriesInView = useInView(categoriesRef, { once: true, amount: 0.3 })
+  const internshipsInView = useInView(internshipsRef, { once: true, amount: 0.3 })
+  const jobsInView = useInView(jobsRef, { once: true, amount: 0.3 })
+  const ctaInView = useInView(ctaRef, { once: true, amount: 0.3 })
+  const communityInView = useInView(communityRef, { once: true, amount: 0.3 })
+  const howItWorksInView = useInView(howItWorksRef, { once: true, amount: 0.3 })
+  const companiesInView = useInView(companiesRef, { once: true, amount: 0.3 })
+  const statsInView = useInView(statsRef, { once: true, amount: 0.3 })
+  const testimonialsInView = useInView(testimonialsRef, { once: true, amount: 0.3 })
+  const faqInView = useInView(faqRef, { once: true, amount: 0.3 })
+  const finalCtaInView = useInView(finalCtaRef, { once: true, amount: 0.3 })
 
   useEffect(() => {
     // Lenis smooth scroll
@@ -560,8 +621,25 @@ export default function Index() {
     lenis.on('scroll', ScrollTrigger.update)
     gsap.ticker.lagSmoothing(0)
 
+    // GSAP Parallax for background elements
+    const ctx = gsap.context(() => {
+      gsap.utils.toArray('.parallax-bg').forEach((el) => {
+        gsap.to(el, {
+          y: -50,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: el,
+            start: 'bottom bottom',
+            end: 'top top',
+            scrub: true
+          }
+        })
+      })
+    })
+
     return () => {
       lenis.destroy()
+      ctx.revert()
     }
   }, [])
 
@@ -712,13 +790,19 @@ export default function Index() {
       </div>
 
       {/* Explore quick links */}
-      <section className="bg-white px-6 py-16">
+      <motion.section 
+        ref={exploreRef}
+        initial="hidden"
+        animate={exploreInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="bg-white px-6 py-16"
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 text-center">
+          <motion.div variants={fadeInUp} className="mb-10 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">Explore more on Bridge</h2>
             <p className="mx-auto mt-3 max-w-lg text-slate-500">Discover everything the platform has to offer.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             {[
               { label: 'Explore Internships', to: '/internships', icon: GraduationCap },
               { label: 'Explore Jobs', to: '/jobs', icon: BriefIcon },
@@ -731,10 +815,8 @@ export default function Index() {
               return (
                 <motion.div
                   key={item.label}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  variants={cardStagger}
+                  custom={i}
                 >
                   <Link
                     to={item.to}
@@ -748,48 +830,60 @@ export default function Index() {
                 </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Category grid */}
-      <section className="bg-white px-6 py-24">
+      <motion.section 
+        ref={categoriesRef}
+        initial="hidden"
+        animate={categoriesInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="bg-white px-6 py-24"
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="mb-14 text-center">
+          <motion.div variants={fadeInUp} className="mb-14 text-center">
             <span className="inline-block rounded-full bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 ring-1 ring-blue-100">Categories</span>
             <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Browse by category</h2>
             <p className="mx-auto mt-3 max-w-lg text-slate-500">Find opportunities that match your interests.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
             {categoryCards.map((c, i) => (
               <motion.div
                 key={c.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.35 }}
+                variants={cardStagger}
+                custom={i}
               >
-                <Link
-                  to="/jobs"
-                  className="group relative block rounded-2xl border border-slate-100 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-lg hover:shadow-blue-100/50"
-                >
-                  <div className="mb-5 grid size-12 place-items-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 transition-all duration-300 group-hover:bg-blue-100 group-hover:text-blue-700 group-hover:ring-blue-200 group-hover:shadow-md">
-                    <c.icon className="size-6" />
-                  </div>
-                  <div className="font-bold text-slate-700 transition-colors group-hover:text-blue-700">{c.name}</div>
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
-                    {c.count.toLocaleString()} open roles
-                  </div>
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+                  <Link
+                    to="/jobs"
+                    className="group relative block rounded-2xl border border-slate-100 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-lg hover:shadow-blue-100/50"
+                  >
+                    <div className="mb-5 grid size-12 place-items-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 transition-all duration-300 group-hover:bg-blue-100 group-hover:text-blue-700 group-hover:ring-blue-200 group-hover:shadow-md">
+                      <c.icon className="size-6" />
+                    </div>
+                    <div className="font-bold text-slate-700 transition-colors group-hover:text-blue-700">{c.name}</div>
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                      {c.count.toLocaleString()} open roles
+                    </div>
+                  </Link>
+                </motion.div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Featured Internships */}
-      <main className="mx-auto max-w-7xl px-6 pb-12">
-        <div className="mb-8 flex items-end justify-between">
+      <motion.section 
+        ref={internshipsRef}
+        initial="hidden"
+        animate={internshipsInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mx-auto max-w-7xl px-6 pb-12"
+      >
+        <motion.div variants={fadeInUp} className="mb-8 flex items-end justify-between">
           <div>
             <h2 className="text-3xl font-bold">Featured internships</h2>
             <p className="mt-1 text-sm text-slate-500">Top internship opportunities for students.</p>
@@ -797,18 +891,26 @@ export default function Index() {
           <Link to="/internships" className="hidden items-center gap-1 text-sm font-bold text-primary hover:underline md:inline-flex">
             View all <ArrowRight className="size-4" />
           </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        </motion.div>
+        <motion.div variants={staggerContainer} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {featuredInternships.slice(0, 4).map((o, i) => (
-            <InternshipCard key={o.id} item={o} index={i} />
+            <motion.div key={o.id} variants={cardStagger}>
+              <InternshipCard item={o} index={i} />
+            </motion.div>
           ))}
-        </div>
-        <div className="mt-12 border-t border-slate-100" />
-      </main>
+        </motion.div>
+        <motion.div variants={fadeInUp} className="mt-12 border-t border-slate-100" />
+      </motion.section>
 
       {/* Featured Jobs */}
-      <main className="mx-auto max-w-7xl px-6 pb-12">
-        <div className="mb-8 flex items-end justify-between">
+      <motion.section 
+        ref={jobsRef}
+        initial="hidden"
+        animate={jobsInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mx-auto max-w-7xl px-6 pb-12"
+      >
+        <motion.div variants={fadeInUp} className="mb-8 flex items-end justify-between">
           <div>
             <h2 className="text-3xl font-bold">Featured jobs</h2>
             <p className="mt-1 text-sm text-slate-500">Hand-picked roles from the past week.</p>
@@ -816,7 +918,7 @@ export default function Index() {
           <Link to="/jobs" className="hidden items-center gap-1 text-sm font-bold text-primary hover:underline md:inline-flex">
             View all <ArrowRight className="size-4" />
           </Link>
-        </div>
+        </motion.div>
         {featuredLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -846,27 +948,35 @@ export default function Index() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <motion.div variants={staggerContainer} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {featured.slice(0, 4).map((o, i) => (
-              <JobCard key={o.id} item={o} index={i} />
+              <motion.div key={o.id} variants={cardStagger}>
+                <JobCard item={o} index={i} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
-        <div className="mt-12 border-t border-slate-100" />
-      </main>
+        <motion.div variants={fadeInUp} className="mt-12 border-t border-slate-100" />
+      </motion.section>
 
       {/* Split CTA */}
-      <section className="mx-auto max-w-7xl px-6 pb-20">
-        <div className="grid gap-6 md:grid-cols-3">
-          <SplitCard
+      <motion.section 
+        ref={ctaRef}
+        initial="hidden"
+        animate={ctaInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mx-auto max-w-7xl px-6 pb-20"
+      >
+        <motion.div variants={staggerContainer} className="grid gap-6 md:grid-cols-3">
+          <motion.div variants={cardStagger}><SplitCard
             icon={<GraduationCap className="size-6" />}
             title="For Students"
             body="Build your profile, apply in one click, and track every application from one place."
             bullets={['Free forever', 'Resume builder & upload', 'Application tracker', 'AI-powered recommendations', 'Real-time messaging']}
             cta="Create profile"
             to="/signup"
-          />
-          <SplitCard
+          /></motion.div>
+          <motion.div variants={cardStagger}><SplitCard
             icon={<Building2 className="size-6" />}
             title="For Companies"
             body="Post roles, manage applicants, and hire the next generation of builders."
@@ -874,31 +984,37 @@ export default function Index() {
             cta="Post a role"
             to="/signup"
             dark
-          />
-          <SplitCard
+          /></motion.div>
+          <motion.div variants={cardStagger}><SplitCard
             icon={<Handshake className="size-6" />}
             title="For Agencies"
             body="Post jobs for clients, manage applicants, and scale your recruitment agency."
             bullets={['Team member management', 'Bulk job & internship posting', 'Kanban applicant pipeline', 'Analytics & performance insights', 'Verification & trust badges']}
             cta="Get started"
             to="/signup"
-          />
-        </div>
-      </section>
+          /></motion.div>
+        </motion.div>
+      </motion.section>
 
       {/* Community */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white px-6 py-24">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-40 top-1/3 size-80 rounded-full bg-indigo-50 blur-3xl" />
-          <div className="absolute -right-40 bottom-1/4 size-60 rounded-full bg-amber-50 blur-3xl" />
+      <motion.section 
+        ref={communityRef}
+        initial="hidden"
+        animate={communityInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white px-6 py-24"
+      >
+        <div className="pointer-events-none absolute inset-0 parallax-bg">
+          <div className="absolute -left-40 top-1/3 size-80 rounded-full bg-indigo-50 blur-3xl parallax-bg" />
+          <div className="absolute -right-40 bottom-1/4 size-60 rounded-full bg-amber-50 blur-3xl parallax-bg" />
         </div>
         <div className="relative mx-auto max-w-6xl">
-          <div className="mb-14 text-center">
+          <motion.div variants={fadeInUp} className="mb-14 text-center">
             <span className="inline-block rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-700 ring-1 ring-indigo-200">Community</span>
             <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Explore the Bridge community</h2>
             <p className="mx-auto mt-3 max-w-lg text-slate-500">Connect, share, and grow with fellow students and professionals.</p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid gap-8 md:grid-cols-3">
             {[
               {
                 icon: MessageCircle,
@@ -923,23 +1039,21 @@ export default function Index() {
               return (
                 <motion.div
                   key={card.title}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.4 }}
-                  className="group relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5"
+                  variants={cardStagger}
                 >
-                  <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className={`mb-5 grid size-14 place-items-center rounded-2xl bg-gradient-to-br ${card.color} text-white shadow-lg shadow-black/5 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
-                    <Icon className="size-6" />
+                  <div className="group relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5">
+                    <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className={`mb-5 grid size-14 place-items-center rounded-2xl bg-gradient-to-br ${card.color} text-white shadow-lg shadow-black/5 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
+                      <Icon className="size-6" />
+                    </div>
+                    <h3 className="mb-3 text-xl font-extrabold tracking-tight text-slate-900">{card.title}</h3>
+                    <p className="text-sm leading-relaxed text-slate-500">{card.desc}</p>
                   </div>
-                  <h3 className="mb-3 text-xl font-extrabold tracking-tight text-slate-900">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{card.desc}</p>
                 </motion.div>
               )
             })}
-          </div>
-          <div className="mt-12 text-center">
+          </motion.div>
+          <motion.div variants={fadeInUp} className="mt-12 text-center">
             <Link
               to="/community"
               className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200/50 transition-all duration-200 hover:scale-105 hover:bg-indigo-700 hover:shadow-xl active:scale-[0.98]"
@@ -947,25 +1061,23 @@ export default function Index() {
               Explore the community
               <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* How it works */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 px-6 py-24 text-white">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-32 top-0 size-96 rounded-full bg-indigo-500/10 blur-3xl" />
-          <div className="absolute -right-32 bottom-0 size-96 rounded-full bg-violet-500/10 blur-3xl" />
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage:
-                'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
-              backgroundSize: '48px 48px',
-            }}
-          />
+      <motion.section 
+        ref={howItWorksRef}
+        initial="hidden"
+        animate={howItWorksInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 px-6 py-24 text-white"
+      >
+        <div className="pointer-events-none absolute inset-0 parallax-bg">
+          <div className="absolute -left-32 top-0 size-96 rounded-full bg-indigo-500/10 blur-3xl parallax-bg" />
+          <div className="absolute -right-32 bottom-0 size-96 rounded-full bg-violet-500/10 blur-3xl parallax-bg" />
         </div>
-        <div className="relative mx-auto max-w-6xl">
+        <motion.div variants={fadeInUp} className="relative mx-auto max-w-6xl">
           <div className="mb-16 text-center">
             <span className="inline-block rounded-full bg-indigo-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300 ring-1 ring-indigo-400/30">How it works</span>
             <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Three steps to your future</h2>
@@ -973,7 +1085,10 @@ export default function Index() {
           </div>
           <div className="relative grid gap-8 md:grid-cols-3">
             {/* Connector line */}
-            <div className="absolute left-1/2 top-16 hidden h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent md:block" />
+            <motion.div 
+              variants={fadeInUp}
+              className="absolute left-1/2 top-16 hidden h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent md:block" 
+            />
             {[
               { n: '01', t: 'Build Your Profile', d: 'Import your projects, stack, and goals in seconds. No tedious resume builders.', icon: 'User' },
               { n: '02', t: 'Apply with Intent', d: 'Our algorithm matches your skills to high-impact roles at top-tier companies.', icon: 'Send' },
@@ -984,11 +1099,7 @@ export default function Index() {
               return (
                 <motion.div
                   key={s.n}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.12, duration: 0.5 }}
-                  className="group relative"
+                  variants={cardStagger}
                 >
                   <div className="relative z-10 flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-400/30 hover:bg-white/[0.07] hover:shadow-2xl hover:shadow-indigo-500/10">
                     <div className="mb-6 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl font-bold shadow-lg shadow-indigo-500/20 ring-1 ring-white/10 group-hover:scale-110 group-hover:shadow-indigo-500/40 transition-all duration-300">
@@ -1002,13 +1113,19 @@ export default function Index() {
               )
             })}
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       {/* Company spotlight */}
-      <section className="bg-gradient-to-b from-slate-50/50 to-white px-6 py-24">
+      <motion.section 
+        ref={companiesRef}
+        initial="hidden"
+        animate={companiesInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="bg-gradient-to-b from-slate-50/50 to-white px-6 py-24"
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="mb-14 flex flex-col items-center justify-between gap-4 md:flex-row">
+          <motion.div variants={fadeInUp} className="mb-14 flex flex-col items-center justify-between gap-4 md:flex-row">
             <div>
               <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary ring-1 ring-primary/20">Featured employers</span>
               <h2 className="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">Companies hiring right now</h2>
@@ -1016,56 +1133,60 @@ export default function Index() {
             <Link to="/jobs" className="group inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 transition-all hover:border-primary hover:text-primary hover:shadow-lg">
               See all companies <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </Link>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid gap-8 md:grid-cols-3">
             {spotlightCompanies.map((c, i) => (
               <motion.div
                 key={c.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.4 }}
-                className="group relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5"
+                variants={cardStagger}
               >
-                <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="flex items-start justify-between">
-                  <div className={`grid size-16 place-items-center rounded-2xl bg-gradient-to-br ${c.color} text-xl font-bold text-white shadow-lg shadow-black/10 ring-1 ring-white/20`}>
-                    {c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                <div className="group relative overflow-hidden rounded-3xl border-2 border-slate-100 bg-white p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5">
+                  <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="flex items-start justify-between">
+                    <div className={`grid size-16 place-items-center rounded-2xl bg-gradient-to-br ${c.color} text-xl font-bold text-white shadow-lg shadow-black/10 ring-1 ring-white/20`}>
+                      {c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200/50">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      HIRING
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200/50">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    HIRING
-                  </span>
-                </div>
-                <h3 className="mt-6 text-xl font-extrabold tracking-tight text-slate-900">{c.name}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">{c.desc}</p>
-                <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-5">
-                  <span className="text-sm font-semibold text-slate-500">
-                    <span className="text-2xl font-extrabold text-primary">{c.roles}</span> open roles
-                  </span>
-                  <Link to="/jobs" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-primary hover:shadow-lg">
-                    View <ArrowRight className="size-3" />
-                  </Link>
+                  <h3 className="mt-6 text-xl font-extrabold tracking-tight text-slate-900">{c.name}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{c.desc}</p>
+                  <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-5">
+                    <span className="text-sm font-semibold text-slate-500">
+                      <span className="text-2xl font-extrabold text-primary">{c.roles}</span> open roles
+                    </span>
+                    <Link to="/jobs" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-primary hover:shadow-lg">
+                      View <ArrowRight className="size-3" />
+                    </Link>
+                  </div>
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Success Counter */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-indigo-800 to-primary px-6 py-20">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-20 top-1/2 size-80 -translate-y-1/2 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute -right-20 top-0 size-60 rounded-full bg-indigo-400/10 blur-3xl" />
+      <motion.section 
+        ref={statsRef}
+        initial="hidden"
+        animate={statsInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-indigo-800 to-primary px-6 py-20"
+      >
+        <div className="pointer-events-none absolute inset-0 parallax-bg">
+          <div className="absolute -left-20 top-1/2 size-80 -translate-y-1/2 rounded-full bg-white/5 blur-3xl parallax-bg" />
+          <div className="absolute -right-20 top-0 size-60 rounded-full bg-indigo-400/10 blur-3xl parallax-bg" />
         </div>
         <div className="relative mx-auto max-w-5xl">
-          <div className="mb-14 text-center">
+          <motion.div variants={fadeInUp} className="mb-14 text-center">
             <span className="inline-block rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-200 ring-1 ring-white/20">Our impact</span>
             <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-white md:text-5xl">Success stories in numbers</h2>
             <p className="mx-auto mt-3 max-w-lg text-indigo-200/70">Real results from real connections made on Bridge.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid grid-cols-1 gap-8 sm:grid-cols-3">
             {[
               { value: 48000, label: 'Placements Made', suffix: '+', icon: TrendingUp },
               { value: 200000, label: 'Active Students', suffix: '+', icon: Users },
@@ -1073,36 +1194,40 @@ export default function Index() {
             ].map((s, i) => (
               <motion.div
                 key={s.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5 }}
-                className="group relative flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.07] hover:shadow-2xl hover:shadow-indigo-500/10"
+                variants={cardStagger}
               >
-                <div className="mb-5 grid size-14 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                  <s.icon className="size-6" />
+                <div className="group relative flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.07] hover:shadow-2xl hover:shadow-indigo-500/10">
+                  <div className="mb-5 grid size-14 place-items-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <s.icon className="size-6" />
+                  </div>
+                  <Counter value={s.value} suffix={s.suffix} />
+                  <p className="mt-2 text-sm font-medium text-indigo-200/70">{s.label}</p>
                 </div>
-                <Counter value={s.value} suffix={s.suffix} />
-                <p className="mt-2 text-sm font-medium text-indigo-200/70">{s.label}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Testimonials */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-indigo-50/30 to-white px-6 py-24">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 size-96 -translate-x-1/2 rounded-full bg-indigo-100/50 blur-3xl" />
-          <div className="absolute -bottom-32 right-0 size-80 rounded-full bg-amber-100/30 blur-3xl" />
+      <motion.section 
+        ref={testimonialsRef}
+        initial="hidden"
+        animate={testimonialsInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="relative overflow-hidden bg-gradient-to-b from-white via-indigo-50/30 to-white px-6 py-24"
+      >
+        <div className="pointer-events-none absolute inset-0 parallax-bg">
+          <div className="absolute left-1/2 top-0 size-96 -translate-x-1/2 rounded-full bg-indigo-100/50 blur-3xl parallax-bg" />
+          <div className="absolute -bottom-32 right-0 size-80 rounded-full bg-amber-100/30 blur-3xl parallax-bg" />
         </div>
         <div className="relative mx-auto max-w-6xl">
-          <div className="mb-16 text-center">
+          <motion.div variants={fadeInUp} className="mb-16 text-center">
             <span className="inline-block rounded-full bg-amber-100 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">Wall of love</span>
             <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Loved by students worldwide</h2>
             <p className="mx-auto mt-3 max-w-lg text-slate-500">Hear from the community that grew their careers through Bridge.</p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          </motion.div>
+          <motion.div variants={staggerContainer} className="grid gap-8 md:grid-cols-3">
             {[
               { n: 'Sarah Jenkins', r: 'Design Intern at CloudScale', q: 'Bridge helped me land my dream internship in less than two weeks. The interface is miles ahead of any other platform.', c: 'from-rose-400 to-orange-400' },
               { n: 'Marcus Lee', r: 'SWE at Nebula Cloud', q: 'Applied to twelve roles in a single afternoon. Got three interviews the same week. Genuinely game-changing.', c: 'from-blue-400 to-indigo-500' },
@@ -1110,11 +1235,7 @@ export default function Index() {
             ].map((t, i) => (
               <motion.figure
                 key={t.n}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.4 }}
-                className="group relative rounded-3xl border-2 border-slate-100 bg-white p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50"
+                variants={cardStagger}
               >
                 {/* Decorative quote mark */}
                 <div className="absolute -top-3 left-6 text-5xl font-serif leading-none text-indigo-100 group-hover:text-indigo-200 transition-colors">"</div>
@@ -1135,32 +1256,44 @@ export default function Index() {
                 </figcaption>
               </motion.figure>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-6 py-24">
-        <div className="mb-12 text-center">
+      <motion.section 
+        ref={faqRef}
+        initial="hidden"
+        animate={faqInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="mx-auto max-w-3xl px-6 py-24"
+      >
+        <motion.div variants={fadeInUp} className="mb-12 text-center">
           <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary ring-1 ring-primary/20">FAQ</span>
           <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Frequently asked questions</h2>
           <p className="mx-auto mt-3 max-w-lg text-slate-500">Everything you need to know about Bridge.</p>
-        </div>
+        </motion.div>
         <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border-2 border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md">
           {faqs.map((f, i) => (
             <FAQItem key={f.q} q={f.q} a={f.a} defaultOpen={i === 0} />
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Final CTA */}
-      <section className="relative px-6 pb-24">
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="size-[600px] rounded-full bg-primary/5 blur-3xl" />
+      <motion.section 
+        ref={finalCtaRef}
+        initial="hidden"
+        animate={finalCtaInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="relative px-6 pb-24"
+      >
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center parallax-bg">
+          <div className="size-[600px] rounded-full bg-primary/5 blur-3xl parallax-bg" />
         </div>
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-primary to-blue-700 px-8 py-20 text-center text-white shadow-2xl shadow-primary/30 ring-1 ring-white/10">
-          <div className="pointer-events-none absolute -left-20 -top-20 size-60 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-10 -right-10 size-40 rounded-full bg-indigo-300/20 blur-3xl" />
+          <motion.div variants={fadeInScale} className="pointer-events-none absolute -left-20 -top-20 size-60 rounded-full bg-white/10 blur-3xl parallax-bg" />
+          <motion.div variants={fadeInScale} className="pointer-events-none absolute -bottom-10 -right-10 size-40 rounded-full bg-indigo-300/20 blur-3xl parallax-bg" />
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.04]"
             style={{
@@ -1170,39 +1303,43 @@ export default function Index() {
             }}
           />
           <div className="relative">
-            <div className="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20 backdrop-blur-sm">
+            <motion.div variants={fadeInScale} className="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20 backdrop-blur-sm">
               <Globe className="size-7" />
-            </div>
-            <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">Ready for your next leap?</h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-white/70">
+            </motion.div>
+            <motion.h2 variants={fadeInUp} className="text-4xl font-extrabold tracking-tight md:text-5xl">Ready for your next leap?</motion.h2>
+            <motion.p variants={fadeInUp} className="mx-auto mt-4 max-w-xl text-lg text-white/70">
               Join 200,000+ students using Bridge to launch their career.
-            </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
+            </motion.p>
+            <motion.div variants={staggerContainer} className="mt-10 flex flex-wrap justify-center gap-4">
               <Link to="/signup">
-                <Button size="lg" className="rounded-xl bg-white px-10 py-7 text-base font-bold text-primary shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white hover:shadow-2xl active:scale-[0.98]">
-                  Create free account
-                </Button>
+                <motion.div variants={fadeInScale}>
+                  <Button size="lg" className="rounded-xl bg-white px-10 py-7 text-base font-bold text-primary shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white hover:shadow-2xl active:scale-[0.98]">
+                    Create free account
+                  </Button>
+                </motion.div>
               </Link>
               <Link to="/jobs">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-xl border-2 border-white/30 bg-white/5 px-10 py-7 text-base font-bold text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white/10 hover:border-white/50 active:scale-[0.98]"
-                >
-                  Browse roles
-                </Button>
+                <motion.div variants={fadeInScale}>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-xl border-2 border-white/30 bg-white/5 px-10 py-7 text-base font-bold text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white/10 hover:border-white/50 active:scale-[0.98]"
+                  >
+                    Browse roles
+                  </Button>
+                </motion.div>
               </Link>
-            </div>
-            <div className="mt-12 flex items-center justify-center gap-8 text-xs text-white/40">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="mt-12 flex items-center justify-center gap-8 text-xs text-white/40">
               <span>No credit card required</span>
               <span className="h-3 w-px bg-white/20" />
               <span>Free forever for students</span>
               <span className="h-3 w-px bg-white/20" />
               <span>2-minute signup</span>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
     </SiteLayout>
   )
 }

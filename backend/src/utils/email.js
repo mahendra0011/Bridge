@@ -10,6 +10,7 @@
 // 4. Paste the key into backend/.env as BREVO_API_KEY
 // 5. Set EMAIL_FROM in .env to match the verified sender, e.g.:
 //    EMAIL_FROM=Bridge <no-reply@yourdomain.com>
+const axios = require('axios')
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
 function parseFromHeader(fromHeader) {
@@ -29,27 +30,31 @@ exports.sendEmail = async ({ to, subject, html }) => {
 
   const sender = parseFromHeader(process.env.EMAIL_FROM)
 
-  const res = await fetch(BREVO_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'api-key': apiKey
-    },
-    body: JSON.stringify({
-      sender,
-      to: [{ email: to }],
-      subject,
-      htmlContent: html
-    })
-  })
+  try {
+    const response = await axios.post(
+      BREVO_API_URL,
+      {
+        sender,
+        to: [{ email: to }],
+        subject,
+        htmlContent: html
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'api-key': apiKey
+        },
+        timeout: 10000 // 10s timeout
+      }
+    )
 
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => '')
-    throw new Error(`Brevo API error (${res.status}): ${errBody}`)
+    return response.data
+  } catch (err) {
+    const status = err.response?.status || 'Network/Timeout Error'
+    const errBody = err.response?.data ? JSON.stringify(err.response.data) : err.message
+    throw new Error(`Brevo API error (${status}): ${errBody}`)
   }
-
-  return res.json()
 }
 
 exports.verificationEmail = (name, link) => ({

@@ -295,14 +295,39 @@ See deployment configs in project root:
 
 **Login says "blocked":** Admin has blocked that user — unblock from `/admin/students` or `/admin/companies`.
 
+---
 
+## Axios Use Karne Ke Recommended Places
 
+Agar aap axios is project me use karna chahaiye, to yahan jaakar use kar sakte hain:
 
+### 1. **Frontend - Custom API Client (`/frontend/src/lib/api.js`)**
+Current fetch-based implementation ko axios se replace kar sakte hain. Axios ke kuch benefits:
+- Automatic JSON parsing
+- Better error handling
+- Request/response interceptors
+- Timeout handling built-in
+- Cancel token support
 
+### 2. **Backend - External API Calls**
+Niche ke files me axios use kar sakte hain jahan external APIs call karni padegi:
 
+**Seed Scripts:**
+- `/backend/seed-company.js` - Agar company data external API se laana ho
+- `/backend/seed-demo-users.js` - Demo users create karte time
 
+**Utility Files:**
+- `/backend/src/utils/email.js` - Email service (SendGrid, Mailgun) ke APIs ke liye
+- `/backend/src/utils/pdfReport.js` - PDF generation service ke liye
 
+**Cron Jobs:**
+- `/backend/src/cron/index.js` - Scheduled tasks jo external APIs call karen
 
+**Common Use Cases:**
+- Email verification APIs
+- Third-party data import/export
+
+Kya aapko kisi specific functionality ke liye axios setup karna hai? Jaise payment integration, email service, ya koi aur external API?
 
 
 

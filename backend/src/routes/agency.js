@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const router = require('express').Router()
 const { sanitizeFields } = require('../utils/sanitize')
 const { protect, restrictTo } = require('../middleware/auth')
-const { uploadLogo, uploadDocument, getFileUrl } = require('../middleware/upload')
+const { uploadLogo, uploadDocument, uploadPortfolioMedia, getFileUrl, deleteOldAsset } = require('../middleware/upload')
 const Agency = require('../models/Agency')
 const AgencyReview = require('../models/AgencyReview')
 const User = require('../models/User')
@@ -635,6 +635,15 @@ router.get('/portfolio', protect, restrictTo('agency'), async (req, res) => {
   try {
     const agency = await getOwnAgency(req.user._id)
     res.json({ portfolio: agency?.portfolio || [] })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.post('/portfolio/image', protect, restrictTo('agency'), uploadPortfolioMedia, async (req, res) => {
+  try {
+    const imageUrl = getFileUrl(req, 'portfolio')
+    res.json({ imageUrl })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

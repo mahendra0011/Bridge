@@ -1,4 +1,20 @@
 const PDFDocument = require('pdfkit')
+const axios = require('axios')
+
+/**
+ * Helper to fetch external image buffer via Axios for embedding in PDF reports
+ */
+async function fetchImageBuffer(imageUrl) {
+  try {
+    const res = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 5000
+    })
+    return Buffer.from(res.data)
+  } catch {
+    return null
+  }
+}
 
 /**
  * Generate a PDF report for company analytics.
@@ -184,4 +200,4 @@ function adminReport(data) {
   })
 }
 
-module.exports = { companyReport, adminReport }
+module.exports = { companyReport, adminReport, fetchImageBuffer }

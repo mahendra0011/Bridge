@@ -1,4 +1,5 @@
 const router = require('express').Router()
+const axios = require('axios')
 const { protect, restrictTo } = require('../middleware/auth')
 const { sanitizeFields } = require('../utils/sanitize')
 const { uploadResume, getFileUrl } = require('../middleware/upload')
@@ -1074,11 +1075,11 @@ router.post('/verify-links', async (req, res) => {
 
     await Promise.all(checks.map(async ({ key, url }) => {
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 5000)
-        const resp = await fetch(url, { method: 'HEAD', signal: controller.signal })
-        clearTimeout(timeout)
-        results[key] = resp.ok
+        const resp = await axios.head(url, {
+          timeout: 5000,
+          validateStatus: (status) => status >= 200 && status < 400
+        })
+        results[key] = true
       } catch {
         results[key] = false
       }

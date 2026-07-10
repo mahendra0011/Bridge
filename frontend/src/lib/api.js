@@ -1,9 +1,6 @@
-// Central API client. All requests go through here so token handling,
-// base URL, and error shape stay consistent across the app.
-//
-// JWT is stored in an httpOnly cookie (set by backend) — the browser sends
-// it automatically with every request when credentials: 'include' is set.
-// No localStorage token management needed.
+// Central API client powered by Axios.
+// All requests go through here so token handling, base URL, timeout, interceptors, and error shape stay consistent across the app.
+import axios from 'axios'
 
 const BASE_URL = import.meta.env.VITE_API_URL || ''
 
@@ -15,34 +12,96 @@ class ApiError extends Error {
   }
 }
 
+// Get CSRF token from cookies
+function getCsrfToken() {
+  return document.cookie
+    .split('; ')
+    .find(r => r.startsWith('csrf-token='))
+    ?.split('=')[1]
+}
+
+// Handle unauthenticated errors - redirect to login
+function handleAuthError() {
+  const currentPath = window.location.pathname
+  if (!currentPath.includes('/login')) {
+    window.location.href = '/login'
+  }
+}
+
+const axiosClient = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  timeout: 15000, // 15 second timeout built-in
+})
+
+// Request Interceptor
+axiosClient.interceptors.request.use((config) => {
+  if (config.method && config.method.toUpperCase() !== 'GET' && !config.skipCsrf) {
+    const csrfToken = getCsrfToken()
+    if (csrfToken) {
+      config.headers['x-csrf-token'] = csrfToken
+    }
+  }
+  return config
+}, (error) => Promise.reject(error))
+
 /**
- * Core request helper.
- * @param {string} path - e.g. '/api/auth/login'
- * @param {object} options - { method, body, isFormData }
+ * Core request helper powered by Axios with retry support.
  */
-async function request(path, { method = 'GET', body, isFormData = false } = {}) {
-  const headers = {}
-  if (!isFormData && body !== undefined) headers['Content-Type'] = 'application/json'
+async function request(path, {
+  method = 'GET',
+  body,
+  isFormData = false,
+  skipCsrf = false,
+  timeout = 15000,
+  retries = 2
+} = {}) {
+  let lastError
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const headers = {}
+      if (!isFormData && body !== undefined) {
+        headers['Content-Type'] = 'application/json'
+      }
 
-  let res
-  try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      credentials: 'include',
-      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
-    })
-  } catch (err) {
-    throw new ApiError('Network error — check your connection and try again.', 0, null)
+      const response = await axiosClient.request({
+        url: path,
+        method,
+        data: body,
+        headers,
+        skipCsrf,
+        timeout
+      })
+
+      return response.data
+    } catch (err) {
+      lastError = err
+      const status = err.response?.status || 0
+      const data = err.response?.data || null
+
+      if (status === 401 || status === 403) {
+        handleAuthError()
+      }
+
+      // If server responded with an error status, don't retry non-network errors unless needed
+      if (err.response) {
+        throw new ApiError(
+          data?.message || `Request failed (${status})`,
+          status,
+          data
+        )
+      }
+
+      if (attempt === retries) break
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+    }
   }
 
-  const contentType = res.headers.get('content-type') || ''
-  const data = contentType.includes('application/json') ? await res.json().catch(() => null) : null
-
-  if (!res.ok) {
-    throw new ApiError(data?.message || `Request failed (${res.status})`, res.status, data)
+  if (lastError instanceof ApiError) {
+    throw lastError
   }
-  return data
+
+  throw new ApiError('Network error — check your connection and try again.', 0, null)
 }
 
 export const api = {

@@ -1,4 +1,5 @@
 const cron = require('node-cron')
+const axios = require('axios')
 const SavedSearchAlert = require('../models/SavedSearchAlert')
 const Job = require('../models/Job')
 const Internship = require('../models/Internship')
@@ -9,6 +10,19 @@ const StudentProfile = require('../models/StudentProfile')
 const CommunityPost = require('../models/CommunityPost')
 const Opportunity = require('../models/Opportunity')
 const { sendEmail } = require('../utils/email')
+
+/**
+ * Helper to dispatch scheduled webhook notifications to external services via Axios
+ */
+async function dispatchWebhookNotification(url, payload) {
+  try {
+    const res = await axios.post(url, payload, { timeout: 10000 })
+    return res.data
+  } catch (err) {
+    console.error('[cron:webhook] Dispatch failed:', err.message)
+    return null
+  }
+}
 
 function digestEmail(recipientName, summaryLines, link) {
   const rows = summaryLines.map(l => `
@@ -296,4 +310,4 @@ function initCronJobs() {
   console.log('[cron] Jobs initialized (saved-search: every 6h, digest: every hour, community: every hour, opportunity: every hour)')
 }
 
-module.exports = { initCronJobs, checkSavedSearchAlerts, sendMessageDigests, checkOpportunityExpiry, checkCommunityExpiry }
+module.exports = { initCronJobs, checkSavedSearchAlerts, sendMessageDigests, checkOpportunityExpiry, checkCommunityExpiry, dispatchWebhookNotification }
