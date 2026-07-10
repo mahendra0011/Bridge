@@ -9,6 +9,7 @@ const Internship = require('../models/Internship')
 const Job = require('../models/Job')
 const Opportunity = require('../models/Opportunity')
 const Application = require('../models/Application')
+const CandidateInvite = require('../models/CandidateInvite')
 const StudentProfile = require('../models/StudentProfile')
 const Conversation = require('../models/Conversation')
 const Message = require('../models/Message')
@@ -870,11 +871,12 @@ router.get('/conversations/:convId/messages', checkPermission('view_messages'), 
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50))
 
     const total = await Message.countDocuments({ conversation: req.params.convId })
+    const skip = Math.max(0, total - page * limit)
 
     const messages = await Message.find({ conversation: req.params.convId })
       .populate('sender', 'name email role')
       .sort('-createdAt')
-      .skip((total - page * limit))
+      .skip(skip)
       .limit(limit)
 
     const messageIds = messages.map(m => m._id)
@@ -929,24 +931,42 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
     const { text, postingId, applicationId } = req.body
     if (!text?.trim()) return res.status(400).json({ message: 'Message text is required' })
 
-    // Require valid relationship: application, invite, or posting context
-    // Get company's own posting IDs
-    const companyPostings = await Promise.all([
-      Job.find({ company: req.company._id }).select('_id').lean(),
-      Internship.find({ company: req.company._id }).select('_id').lean()
-    ])
-    const jobIds = companyPostings[0].map(j => j._id)
-    const internshipIds = companyPostings[1].map(i => i._id)
+    // Verify relationship: check applicationId belongs to this student AND this company's posting
+    if (applicationId) {
+      const app = await Application.findById(applicationId)
+      if (!app || String(app.applicant) !== String(studentUserId)) {
+        return res.status(403).json({ message: 'Invalid application for this student' })
+      }
+      // Check that the application's posting belongs to this company
+      const postingBelongsToCompany = await Job.findById(app.posting).then(j => j && String(j.company) === String(req.company._id))
+        || await Internship.findById(app.posting).then(i => i && String(i.company) === String(req.company._id))
+        || await Opportunity.findById(app.posting).then(o => o && String(o.poster) === String(req.company._id))
+      if (!postingBelongsToCompany) {
+        return res.status(403).json({ message: 'You can only message students who applied to your own postings' })
+      }
+    } else if (postingId) {
+      // Verify posting belongs to this company
+      const posting = await Job.findById(postingId) || await Internship.findById(postingId) || await Opportunity.findById(postingId)
+      if (!posting) {
+        return res.status(403).json({ message: 'Invalid posting' })
+      }
+      const postingCompanyId = posting.company || posting.poster
+      if (String(postingCompanyId) !== String(req.company._id)) {
+        return res.status(403).json({ message: 'You can only message students about your own postings' })
+      }
+    } else {
+      // No posting/application - check application or invite
+      const hasApplication = await Application.findOne({
+        applicant: studentUserId,
+        $or: [{ job: { $in: await Job.find({ company: req.company._id }).select('_id') } },
+              { internship: { $in: await Internship.find({ company: req.company._id }).select('_id') } },
+              { posting: { $in: await Opportunity.find({ poster: req.company._id }).select('_id') }}],
+      })
+      const hasInvite = await CandidateInvite.findOne({ company: req.company._id, candidate: studentUserId })
 
-    // Check application to THIS company's postings only
-    const hasApplication = await Application.findOne({
-      student: studentUserId,
-      $or: [{ job: { $in: jobIds } }, { internship: { $in: internshipIds } }]
-    })
-    const hasInvite = req.company.invitedCandidates?.some((inv) => String(inv.user) === String(studentUserId))
-
-    if (!applicationId && !postingId && !hasApplication && !hasInvite) {
-      return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
+      if (!hasApplication && !hasInvite) {
+        return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
+      }
     }
 
     // Check blocks
@@ -964,7 +984,7 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
 
     if (!conv) {
       let postingModel = undefined
-      if (postingId && !applicationId) {
+      if (postingId) {
         if (await Job.findById(postingId)) postingModel = 'Job'
         else if (await Internship.findById(postingId)) postingModel = 'Internship'
         else if (await Opportunity.findById(postingId)) postingModel = 'Opportunity'
@@ -1246,6 +1266,18 @@ router.post('/report-conversation', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
+// GET /api/company/conversations/:convId - Fetch single conversation (for email deep-links)
+router.get('/conversations/:convId', checkPermission('view_messages'), async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
+      .populate('participants', 'name email role')
+      .populate('posting', 'title')
+      .populate('application', 'status')
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+    res.json({ conversation: conv })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
 // GET /api/company/conversations/:convId/online-status
 router.get('/conversations/:convId/online-status', checkPermission('view_messages'), async (req, res) => {
   try {
@@ -1262,14 +1294,14 @@ router.get('/conversations/:convId/online-status', checkPermission('view_message
 })
 
 // GET /api/company/canned-replies
-router.get('/canned-replies', async (req, res) => {
+router.get('/canned-replies', checkPermission('view_messages'), async (req, res) => {
   try {
     res.json({ cannedReplies: req.company?.cannedReplies || [] })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
 // POST /api/company/canned-replies
-router.post('/canned-replies', async (req, res) => {
+router.post('/canned-replies', checkPermission('send_messages'), async (req, res) => {
   try {
     const { title, body } = req.body
     if (!title?.trim() || !body?.trim()) {
@@ -1282,7 +1314,7 @@ router.post('/canned-replies', async (req, res) => {
 })
 
 // DELETE /api/company/canned-replies/:id
-router.delete('/canned-replies/:id', async (req, res) => {
+router.delete('/canned-replies/:id', checkPermission('send_messages'), async (req, res) => {
   try {
     if (!req.company) return res.status(404).json({ message: 'Company not found' })
     const replyId = req.params.id

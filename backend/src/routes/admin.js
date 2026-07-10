@@ -215,19 +215,33 @@ router.get('/companies', async (req, res) => {
 
 router.patch('/companies/:id/verify', async (req, res) => {
   try {
-    const company = await Company.findOneAndUpdate({ user: req.params.id }, { isVerified: true }, { new: true })
-    if (!company) return res.status(404).json({ message: 'Company profile not found' })
-    await AuditLog.create({ admin: req.user._id, action: 'verify_company', target: 'Company', targetId: company._id, details: { userId: req.params.id } })
+    let company = await Company.findOneAndUpdate({ user: req.params.id }, { isVerified: true }, { new: true })
+    if (!company) company = await Company.findByIdAndUpdate(req.params.id, { isVerified: true }, { new: true })
+    if (!company) return res.status(404).json({ message: 'Company not found' })
+    await AuditLog.create({ admin: req.user._id, action: 'verify_company', target: 'Company', targetId: company._id, details: { userId: company.user } })
     res.json({ company })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
 router.patch('/companies/:id/unverify', async (req, res) => {
   try {
-    const company = await Company.findOneAndUpdate({ user: req.params.id }, { isVerified: false }, { new: true })
-    if (!company) return res.status(404).json({ message: 'Company profile not found' })
+    let company = await Company.findOneAndUpdate({ user: req.params.id }, { isVerified: false }, { new: true })
+    if (!company) company = await Company.findByIdAndUpdate(req.params.id, { isVerified: false }, { new: true })
+    if (!company) return res.status(404).json({ message: 'Company not found' })
     await AuditLog.create({ admin: req.user._id, action: 'unverify_company', target: 'Company', targetId: company._id })
     res.json({ company })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+router.patch('/companies/:id/suspend', async (req, res) => {
+  try {
+    let company = await Company.findById(req.params.id)
+    if (!company) company = await Company.findOne({ user: req.params.id })
+    if (!company) return res.status(404).json({ message: 'Company not found' })
+    const user = await User.findByIdAndUpdate(company.user, { isBlocked: true }, { new: true })
+    if (!user) return res.status(404).json({ message: 'Company owner not found' })
+    await AuditLog.create({ admin: req.user._id, action: 'block_user', target: 'User', targetId: company.user, details: { companyId: company._id } })
+    res.json({ message: 'Company suspended', user })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
@@ -271,6 +285,7 @@ router.patch('/postings/:id/approve', async (req, res) => {
     let posting = await Internship.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true })
     let kind = 'Internship'
     if (!posting) { posting = await Job.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true }); kind = 'Job' }
+    if (!posting) { posting = await Opportunity.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true }); kind = 'Opportunity' }
     if (!posting) return res.status(404).json({ message: 'Not found' })
     await AuditLog.create({ admin: req.user._id, action: 'approve_posting', target: kind, targetId: req.params.id })
     res.json({ posting })
@@ -281,6 +296,7 @@ router.delete('/postings/:id', async (req, res) => {
   try {
     await Internship.findByIdAndDelete(req.params.id)
     await Job.findByIdAndDelete(req.params.id)
+    await Opportunity.findByIdAndDelete(req.params.id)
     await AuditLog.create({ admin: req.user._id, action: 'delete_posting', target: 'Posting', targetId: req.params.id })
     res.json({ message: 'Deleted' })
   } catch (err) { res.status(500).json({ message: err.message }) }

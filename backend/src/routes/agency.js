@@ -9,6 +9,7 @@ const User = require('../models/User')
 const Job = require('../models/Job')
 const Internship = require('../models/Internship')
 const Application = require('../models/Application')
+const StudentProfile = require('../models/StudentProfile')
 const Notification = require('../models/Notification')
 const Message = require('../models/Message')
 const Conversation = require('../models/Conversation')
@@ -838,7 +839,6 @@ router.post('/conversations/direct', checkAgencyPermission('send_messages'), asy
       return res.status(400).json({ message: 'Cannot start conversation with yourself' })
     }
 
-    const StudentProfile = require('../models/StudentProfile')
     const studentProfile = await StudentProfile.findOne({ user: userId }).select('blockedUsers')
     const agency = await Agency.findOne({ user: req.user._id }).select('blockedUsers')
     const studentBlocked = studentProfile?.blockedUsers?.some(id => String(id) === String(req.user._id))
@@ -849,9 +849,10 @@ router.post('/conversations/direct', checkAgencyPermission('send_messages'), asy
 
     // Require valid relationship: student applied to agency's posting
     const hasApplication = await Application.findOne({
-      student: userId,
-      $or: [{ job: { $in: await Job.find({ agency: agency._id }).select('_id') } },
-            { internship: { $in: await Internship.find({ agency: agency._id }).select('_id') } }],
+      applicant: userId,
+      $or: [{ posting: { $in: await Job.find({ $or: [{ agency: agency._id }, { company: agency._id }] }).select('_id') } },
+            { posting: { $in: await Internship.find({ $or: [{ agency: agency._id }, { company: agency._id }] }).select('_id') } },
+            { posting: { $in: await Opportunity.find({ poster: { $in: await User.find({ companyId: agency._id }).select('_id') } }).select('_id') }}],
     })
 
     if (!hasApplication) {
@@ -946,11 +947,12 @@ router.get('/conversations/:id/messages', checkAgencyPermission('view_messages')
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50))
 
       const total = await Message.countDocuments({ conversation: req.params.id })
+      const skip = Math.max(0, total - page * limit)
 
       const messages = await Message.find({ conversation: req.params.id })
         .populate('sender', 'name email role')
         .sort('-createdAt')
-        .skip((total - page * limit))
+        .skip(skip)
         .limit(limit)
 
       const messageIds = messages.map(m => m._id)
@@ -1278,6 +1280,18 @@ router.post('/conversations/:id/block', protect, restrictTo('agency'), async (re
     }
 
     res.json({ message: 'Conversation blocked' })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// GET /api/agency/conversations/:id - Fetch single conversation (for email deep-links)
+router.get('/conversations/:id', checkAgencyPermission('view_messages'), async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
+      .populate('participants', 'name email role')
+      .populate('posting', 'title')
+      .populate('application', 'status')
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+    res.json({ conversation: conv })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 

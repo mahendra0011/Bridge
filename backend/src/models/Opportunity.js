@@ -37,7 +37,7 @@ const opportunitySchema = new mongoose.Schema({
   }],
   applicantsCount: { type: Number, default: 0 },
   views:           { type: Number, default: 0 },
-  status:          { type: String, enum: ['active', 'filled', 'closed', 'expired', 'archived'], default: 'active' },
+  status:          { type: String, enum: ['active', 'filled', 'closed', 'expired', 'archived', 'approved', 'rejected'], default: 'active' },
 }, { timestamps: true })
 
 module.exports = mongoose.model('Opportunity', opportunitySchema)

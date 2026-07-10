@@ -199,6 +199,11 @@ export default function App() {
                 <AgencyMessages />
               </ProtectedRoute>
             } />
+            <Route path="/agency/messages/:convId" element={
+              <ProtectedRoute roles={['agency']}>
+                <AgencyMessages />
+              </ProtectedRoute>
+            } />
             <Route path="/agency/analytics" element={
               <ProtectedRoute roles={['agency']}>
                 <AgencyAnalytics />
@@ -300,6 +305,14 @@ export default function App() {
             />
             <Route
               path="/dashboard/messages"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <StudentMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/messages/:convId"
               element={
                 <ProtectedRoute roles={['student']}>
                   <StudentMessages />
@@ -520,6 +533,14 @@ export default function App() {
             />
             <Route
               path="/company/messages"
+              element={
+                <ProtectedRoute roles={['company']}>
+                  <CompanyMessages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/messages/:convId"
               element={
                 <ProtectedRoute roles={['company']}>
                   <CompanyMessages />

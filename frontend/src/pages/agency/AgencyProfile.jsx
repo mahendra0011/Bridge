@@ -184,7 +184,7 @@ export default function AgencyProfile() {
         setProfile(p => ({ ...p, logoUrl: res.logoUrl }))
         setLogoFile(null)
       }
-      await api.put('/api/agency/profile', form)
+      await api.put('/api/agency/me', form)
       setEditing(false)
       toast.success('Profile updated')
       if (refreshUser) refreshUser()

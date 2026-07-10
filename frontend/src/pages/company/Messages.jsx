@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Send, MessageSquare, Building2, User as UserIcon,
   Check, CheckCheck, Paperclip, Search, Flag, Ban, AlertTriangle,
@@ -193,26 +193,46 @@ useEffect(() => {
       shouldAutoScrollRef.current = true
     }, [activeConv])
 
-  // Load messages when conversation changes
-  useEffect(() => {
-    if (activeConv) {
-      setMsgLoading(true)
-      setPage(1)
-      setMessages([])
-      api.get(`/api/company/conversations/${activeConv._id}/messages?page=1&limit=50`)
-        .then((data) => {
-          setMessages(data.messages || [])
-          setTotalPages(data.totalPages || 1)
-          setHasMore(data.page < data.totalPages)
-        })
-        .catch(() => {})
-        .finally(() => setMsgLoading(false))
-      emit('conversation:join', { conversationId: activeConv._id })
-    }
-    return () => {
-      if (activeConv) emit('conversation:leave', { conversationId: activeConv._id })
-    }
-  }, [activeConv, emit])
+// Load messages when conversation changes
+   useEffect(() => {
+     if (activeConv) {
+       setMsgLoading(true)
+       setPage(1)
+       setMessages([])
+       api.get(`/api/company/conversations/${activeConv._id}/messages?page=1&limit=50`)
+         .then((data) => {
+           setMessages(data.messages || [])
+           setTotalPages(data.totalPages || 1)
+           setHasMore(data.page < data.totalPages)
+         })
+         .catch(() => {})
+         .finally(() => setMsgLoading(false))
+       emit('conversation:join', { conversationId: activeConv._id })
+     }
+     return () => {
+       if (activeConv) emit('conversation:leave', { conversationId: activeConv._id })
+     }
+   }, [activeConv, emit])
+
+   // Handle deep-link to conversation from URL param
+   useEffect(() => {
+     const convId = useParams().convId
+     if (!convId || !user) return
+     const existing = conversations.find(c => c._id === convId)
+     if (existing) {
+       setActiveConv(existing)
+     } else {
+       api.get(`/api/company/conversations/${convId}`).then(data => {
+         if (data?.conversation) {
+           setConversations(prev => {
+             const exists = prev.some(c => c._id === data.conversation._id)
+             return exists ? prev : [...prev, data.conversation]
+           })
+           setActiveConv(data.conversation)
+         }
+       }).catch(() => {})
+     }
+   }, [conversations, user])
 
   useEffect(() => {
     const handleClickOutside = (e) => {

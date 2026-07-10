@@ -104,7 +104,7 @@ bridge-project/
 ```bash
 # Backend
 cd backend
-npm install
+npm install --legacy-peer-deps  # Required due to cloudinary/multer-storage-cloudinary version conflict
 
 # Frontend
 cd ../frontend

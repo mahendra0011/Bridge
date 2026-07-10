@@ -22,9 +22,8 @@ function getCsrfToken() {
 
 // Handle unauthenticated errors - redirect to login
 function handleAuthError() {
-  const currentPath = window.location.pathname
-  if (!currentPath.includes('/login')) {
-    window.location.href = '/login'
+  if (!window.location.hash.includes('login')) {
+    window.location.href = '/#/login'
   }
 }
 

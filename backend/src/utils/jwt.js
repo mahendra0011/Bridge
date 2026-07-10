@@ -2,16 +2,16 @@ const jwt = require('jsonwebtoken')
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production' || process.env.CORS_ORIGIN?.startsWith('http'),
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 }
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production' || process.env.CORS_ORIGIN?.startsWith('http'),
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/',
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 }

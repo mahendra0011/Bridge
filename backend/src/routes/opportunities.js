@@ -8,9 +8,11 @@ const { escapeRegex } = require('../utils/sanitize')
 // GET /api/opportunities - List all opportunities
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20, query, location, mode, category, skills, sort, poster } = req.query
+    const { page = 1, limit = 20, query, location, mode, category, skills, sort, poster, status } = req.query
 
     const filter = {}
+    if (status === 'all') { /* no filter */ }
+    else if (status) filter.status = status
     if (query) {
       filter.$or = [
         { title: { $regex: escapeRegex(query), $options: 'i' } },

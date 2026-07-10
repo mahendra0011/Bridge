@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useParams } from 'react-router-dom'
 import {
   MessageSquare, Search, Send, Paperclip, Phone, MoreVertical,
   Users, ChevronRight, X, Check, Image, Smile
@@ -115,13 +115,31 @@ const textEmojiPickerRef = useRef(null)
     }).catch(() => {}).finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadConversations() }, [])
+useEffect(() => { loadConversations() }, [])
 
-  // Handle direct message from opportunity
-  useEffect(() => {
-    const userId = searchParams.get('userId')
-    if (!userId || !user) return
-    api.post('/api/agency/conversations/direct', { userId })
+  // Handle deep-link to conversation from URL param or ?userId=X
+   useEffect(() => {
+     const convId = useParams().convId
+     const userId = searchParams.get('userId')
+
+     if (!user) return
+
+     // Deep-link to existing conversation via URL param
+     if (convId) {
+       const existing = conversations.find(c => c._id === convId)
+       if (existing) {
+         setActiveChat(existing)
+       } else {
+         api.get(`/api/agency/conversations/${convId}`).then(data => {
+           if (data?.conversation) setActiveChat(data.conversation)
+         }).catch(() => {})
+       }
+       return
+     }
+
+     // Handle direct message from opportunity (or any ?userId=X link)
+     if (!userId) return
+     api.post('/api/agency/conversations/direct', { userId })
       .then((data) => {
         if (data?.conversation) {
           setConversations((prev) => {

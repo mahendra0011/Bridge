@@ -5,6 +5,8 @@ const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
 const { uploadResume, getFileUrl, uploadApplyFiles } = require('../middleware/upload')
 const StudentProfile = require('../models/StudentProfile')
 const Application = require('../models/Application')
+const CandidateInvite = require('../models/CandidateInvite')
+const Opportunity = require('../models/Opportunity')
 const Notification = require('../models/Notification')
 const Message = require('../models/Message')
 const Conversation = require('../models/Conversation')
@@ -192,7 +194,40 @@ router.post('/saved/:kind/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
-// DELETE /api/student/applications/:id  (withdraw — only if status is "Applied")
+  // POST /api/student/saved  (toggle save - body: { posting, postingType })
+  router.post('/saved', async (req, res) => {
+    try {
+      const { posting, postingType } = req.body
+      if (!posting || !postingType) return res.status(400).json({ message: 'posting and postingType required' })
+      if (!['job', 'internship'].includes(postingType)) return res.status(400).json({ message: 'Invalid postingType' })
+      const field = postingType === 'job' ? 'savedJobs' : 'savedInternships'
+      const profile = await StudentProfile.findOneAndUpdate(
+        { user: req.user._id }, {}, { upsert: true, new: true }
+      )
+      const already = profile[field].some((x) => String(x) === String(posting))
+      if (already) {
+        profile[field] = profile[field].filter((x) => String(x) !== String(posting))
+      } else {
+        profile[field].push(posting)
+      }
+      await profile.save()
+      res.json({ saved: !already, savedJobs: profile.savedJobs, savedInternships: profile.savedInternships })
+    } catch (err) { res.status(500).json({ message: err.message }) }
+  })
+
+  // DELETE /api/student/saved/:id  (remove saved item)
+  router.delete('/saved/:id', async (req, res) => {
+    try {
+      const profile = await StudentProfile.findOne({ user: req.user._id })
+      if (!profile) return res.status(404).json({ message: 'Profile not found' })
+      profile.savedJobs = profile.savedJobs?.filter((x) => String(x) !== String(req.params.id)) || []
+      profile.savedInternships = profile.savedInternships?.filter((x) => String(x) !== String(req.params.id)) || []
+      await profile.save()
+      res.json({ saved: false })
+    } catch (err) { res.status(500).json({ message: err.message }) }
+  })
+
+  // DELETE /api/student/applications/:id  (withdraw — only if status is "Applied")
 router.delete('/applications/:id', async (req, res) => {
   try {
     const app = await Application.findOne({ _id: req.params.id, applicant: req.user._id })
@@ -405,7 +440,6 @@ router.post('/conversations/direct', protect, async (req, res) => {
     }
 
     // Check if student has blocked this user
-    const StudentProfile = require('../models/StudentProfile')
     const studentProfile = await StudentProfile.findOne({ user: req.user._id })
     const studentBlocked = studentProfile?.blockedUsers?.some(
       (id) => String(id) === String(userId)
@@ -415,16 +449,44 @@ router.post('/conversations/direct', protect, async (req, res) => {
     }
 
     // Require valid relationship: student must have applied to company's posting or been invited
-    const hasApplication = await Application.findOne({
-      student: req.user._id,
-      $or: [{ job: { $in: await Job.find({ company: userId }).select('_id') } },
-            { internship: { $in: await Internship.find({ company: userId }).select('_id') } }],
-    })
-    const CompanyModel = require('../models/Company')
-    const company = await CompanyModel.findOne({ user: userId }).select('invitedCandidates')
-    const hasInvite = company?.invitedCandidates?.some((inv) => String(inv) === String(req.user._id))
+    let hasRelationship = false
+    if (applicationId) {
+      const app = await Application.findById(applicationId)
+      if (!app || String(app.applicant) !== String(req.user._id)) {
+        return res.status(403).json({ message: 'Invalid application for this student' })
+      }
+      // Check that the application's posting belongs to the target company
+      const postingBelongsToCompany = await Job.findById(app.posting).then(j => j && String(j.company) === String(userId))
+        || await Internship.findById(app.posting).then(i => i && String(i.company) === String(userId))
+        || await Opportunity.findById(app.posting).then(o => o && String(o.poster) === String(userId))
+      if (!postingBelongsToCompany) {
+        return res.status(403).json({ message: 'You can only message companies you have applied to' })
+      }
+      hasRelationship = true
+    } else if (postingId) {
+      const posting = await Job.findById(postingId) || await Internship.findById(postingId) || await Opportunity.findById(postingId)
+      if (!posting) {
+        return res.status(403).json({ message: 'Invalid posting' })
+      }
+      const postingCompanyId = posting.company || posting.poster
+      if (String(postingCompanyId) !== String(userId)) {
+        return res.status(403).json({ message: 'You can only message about postings from this company' })
+      }
+      hasRelationship = true
+    } else {
+      // Check application or invite
+      const hasApplication = await Application.findOne({
+        applicant: req.user._id,
+        $or: [{ job: { $in: await Job.find({ company: userId }).select('_id') } },
+              { internship: { $in: await Internship.find({ company: userId }).select('_id') } },
+              { posting: { $in: await Opportunity.find({ poster: userId }).select('_id') }}],
+      })
+      const hasInvite = await CandidateInvite.findOne({ company: userId, candidate: req.user._id })
 
-    if (!applicationId && !postingId && !hasApplication && !hasInvite) {
+      hasRelationship = !!(hasApplication || hasInvite)
+    }
+
+    if (!hasRelationship) {
       return res.status(403).json({ message: 'You can only message companies you have applied to or been invited by' })
     }
 
@@ -471,6 +533,18 @@ router.post('/conversations/direct', protect, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
+// GET /api/student/conversations/:id - Fetch single conversation (for email deep-links)
+router.get('/conversations/:id', protect, async (req, res) => {
+  try {
+    const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
+      .populate('participants', 'name email role')
+      .populate('posting', 'title')
+      .populate('application', 'status')
+    if (!conv) return res.status(404).json({ message: 'Conversation not found' })
+    res.json({ conversation: conv })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
 // GET /api/student/conversations/:id/messages
 router.get('/conversations/:id/messages', protect, async (req, res) => {
   try {
@@ -482,10 +556,11 @@ router.get('/conversations/:id/messages', protect, async (req, res) => {
 
     const total = await Message.countDocuments({ conversation: req.params.id })
 
+    const skip = Math.max(0, total - page * limit)
     const messages = await Message.find({ conversation: req.params.id })
       .populate('sender', 'name email role')
       .sort('-createdAt')
-      .skip((total - page * limit))
+      .skip(skip)
       .limit(limit)
 
     const messageIds = messages.map(m => m._id)

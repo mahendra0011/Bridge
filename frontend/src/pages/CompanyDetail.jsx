@@ -801,7 +801,7 @@ export default function CompanyDetail() {
                 {!company.isVerified ? (
                   <button onClick={async () => {
                     try {
-                      await api.put(`/api/admin/company/${companyId}/verify`, { isVerified: true })
+                      await api.patch(`/api/admin/companies/${companyId}/verify`)
                       toast.success('Company verified!')
                       window.location.reload()
                     } catch (e) { toast.error(e.message) }
@@ -811,7 +811,7 @@ export default function CompanyDetail() {
                 ) : (
                   <button onClick={async () => {
                     try {
-                      await api.put(`/api/admin/company/${companyId}/verify`, { isVerified: false })
+                      await api.patch(`/api/admin/companies/${companyId}/unverify`)
                       toast.success('Verification revoked')
                       window.location.reload()
                     } catch (e) { toast.error(e.message) }
@@ -821,7 +821,7 @@ export default function CompanyDetail() {
                 )}
                 <button onClick={async () => {
                   try {
-                    await api.delete(`/api/admin/company/${companyId}`)
+                    await api.patch(`/api/admin/companies/${companyId}/suspend`)
                     toast.success('Company suspended')
                     navigate('/admin/companies')
                   } catch (e) { toast.error(e.message) }

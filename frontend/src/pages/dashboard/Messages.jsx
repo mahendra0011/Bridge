@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Send, MessageSquare, Building2, User as UserIcon,
   Check, CheckCheck, Paperclip, Search, Flag, Ban, AlertTriangle,
@@ -168,13 +168,32 @@ const messagesEndRef = useRef(null)
       .then((data) => setConversations(data.conversations || []))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+}, [])
 
-  // Handle direct message from opportunity (or any ?userId=X link)
-  useEffect(() => {
-    const userId = searchParams.get('userId')
-    if (!userId || !user) return
-    api.post('/api/student/conversations/direct', { userId })
+   // Handle deep-link to conversation from URL param or ?userId=X
+   useEffect(() => {
+     const convId = useParams().convId
+     const userId = searchParams.get('userId')
+
+     if (!user) return
+
+     // Deep-link to existing conversation via URL param
+     if (convId) {
+       const existing = conversations.find(c => c._id === convId)
+       if (existing) {
+         setActiveConv(existing)
+       } else {
+         api.get(`/api/student/conversations/${convId}`).then(data => {
+           if (data?.conversation) setActiveConv(data.conversation)
+         }).catch(() => {})
+       }
+     }
+
+     // Handle direct message from opportunity (or any ?userId=X link)
+     if (!userId) return
+     if (convId) return // Don't start conv if we already have convId
+
+     api.post('/api/student/conversations/direct', { userId })
       .then((data) => {
         if (data?.conversation) {
           setConversations((prev) => {
@@ -186,7 +205,7 @@ const messagesEndRef = useRef(null)
         setSearchParams({}, { replace: true })
       })
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
-  }, [searchParams, user, setSearchParams])
+   }, [searchParams, user, setSearchParams, conversations])
 
   useEffect(() => {
     activeIdRef.current = activeConv?._id || null
