@@ -78,9 +78,6 @@ async function request(path, {
       const status = err.response?.status || 0
       const data = err.response?.data || null
 
-      if (status === 401 || status === 403) {
-        handleAuthError()
-      }
 
       // If server responded with an error status, don't retry non-network errors unless needed
       if (err.response) {

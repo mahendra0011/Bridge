@@ -6,8 +6,9 @@
 
 require('dotenv').config()
 const dns = require('dns')
-dns.setServers(['1.1.1.1', '8.8.8.8'])
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1'])
 const mongoose = require('mongoose')
+const { resolveMongoUri } = require('../utils/mongoConnection')
 const User = require('../models/User')
 
 async function run() {
@@ -29,7 +30,8 @@ async function run() {
     process.exit(1)
   }
 
-  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/bridge'
+  const rawUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
+  const mongoUri = await resolveMongoUri(rawUri)
   await mongoose.connect(mongoUri)
   console.log('Connected to MongoDB.')
 

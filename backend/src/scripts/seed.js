@@ -1,7 +1,8 @@
 require('dotenv').config()
 const dns = require('dns')
-dns.setServers(['1.1.1.1', '8.8.8.8'])
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1'])
 const mongoose = require('mongoose')
+const { resolveMongoUri } = require('../utils/mongoConnection')
 const User = require('../models/User')
 const StudentProfile = require('../models/StudentProfile')
 const Company = require('../models/Company')
@@ -339,10 +340,11 @@ async function upsertUser(demo) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function run() {
-  let mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/bridge'
-  const match = mongoUri.match(/MONGODB_URI="?([^"]+)"?/)
-  if (match) mongoUri = match[1]
+  let rawUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
+  const match = rawUri.match(/MONGODB_URI="?([^"]+)"?/)
+  if (match) rawUri = match[1]
 
+  const mongoUri = await resolveMongoUri(rawUri)
   await mongoose.connect(mongoUri)
   console.log('Connected to MongoDB.\n')
 
@@ -361,7 +363,7 @@ async function run() {
       openTo: 'both',
       relocate: true,
       noticePeriod: '30 days',
-      expectedCTC: { min: 600000, max: 900000 },
+      expectedCTC: '6-9 LPA',
       openToWork: true,
       hideFromCurrentEmployer: false,
       lastActive: new Date(),
@@ -371,13 +373,13 @@ async function run() {
       skills: ['JavaScript', 'React', 'Node.js', 'Python', 'TypeScript', 'Tailwind CSS'],
       resumeUrl: '/uploads/resumes/demo-resume.pdf',
       bio: 'Passionate frontend developer with experience building modern web applications. Looking for opportunities in full-stack development.',
-      experience: [{ company: 'TechNova', role: 'Frontend Intern', duration: '6 months', current: true }],
-      education: [{ degree: 'B.Tech Computer Science', institution: 'University of Technology', year: '2026' }],
+      experience: [{ company: 'TechNova', role: 'Frontend Intern', startDate: new Date('2023-01-01'), endDate: new Date('2023-07-01'), current: false }],
+      education: [{ college: 'University of Technology', degree: 'B.Tech Computer Science', endYear: '2026' }],
       projects: [{ title: 'E-Commerce Platform', description: 'Built a full-stack e-commerce platform using React and Node.js', techStack: ['React', 'Node.js', 'MongoDB'], link: 'https://github.com/demo/ecommerce' }],
-      certifications: [{ name: 'AWS Cloud Practitioner', issuer: 'Amazon', date: '2024-01' }],
+      certifications: [{ name: 'AWS Cloud Practitioner', issuingBody: 'Amazon', date: new Date('2024-01-01') }],
       achievements: [{ title: 'Hackathon Winner', description: 'Won first place at TechHack 2024' }],
-      languages: [{ name: 'English', proficiency: 'Fluent' }, { name: 'Hindi', proficiency: 'Native' }],
-      jobPreferences: { preferredLocations: ['Bangalore', 'Remote'], preferredRoles: ['Frontend Developer', 'Full Stack Developer'], preferredCompanyType: 'Startup' },
+      languages: [{ language: 'English', proficiency: 'Professional' }, { language: 'Hindi', proficiency: 'Native' }],
+      jobPreferences: { preferredLocations: ['Bangalore', 'Remote'], preferredRoles: ['Frontend Developer', 'Full Stack Developer'], preferredCompanyType: 'startup' },
       github: 'https://github.com/demo',
       linkedin: 'https://linkedin.com/in/demo',
       portfolio: 'https://demo.dev',

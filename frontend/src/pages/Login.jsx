@@ -28,8 +28,9 @@ function GoogleLoginButton() {
     const redirectValue = params.get('redirect')
     // Build redirect query string for Google OAuth
     const redirectParam = redirectValue ? `?redirect=${redirectValue}` : ''
+    const apiBase = import.meta.env.VITE_API_URL || ''
     // Redirect to backend which handles the Google OAuth flow
-    window.location.href = `/api/auth/google${redirectParam}`
+    window.location.href = `${apiBase}/api/auth/google${redirectParam}`
   }
 
   return (
