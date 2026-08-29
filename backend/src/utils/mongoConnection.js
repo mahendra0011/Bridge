@@ -1,5 +1,5 @@
 const dns = require('dns')
-dns.setServers(['1.1.1.1', '8.8.8.8'])
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1'])
 const { URL } = require('url')
 const https = require('https')
 
@@ -56,26 +56,34 @@ async function resolveMongoUri(uri) {
 
     const srvName = `_mongodb._tcp.${parsed.hostname}`
 
-    // Try 1: DNS-over-HTTPS via Google (most reliable, bypasses ISP DNS blocks)
-    try {
-      console.log('🔍 Resolving SRV via Google DNS-over-HTTPS:', srvName)
-      const records = await resolveSrvViaDoH(srvName)
-
+    const buildResolvedUri = (records) => {
       const hosts = records
         .sort((a, b) => a.priority - b.priority || b.weight - a.weight)
         .map(r => `${r.name}:${r.port}`)
         .join(',')
 
       const authPart = parsed.username
-        ? `${decodeURIComponent(parsed.username)}:${decodeURIComponent(parsed.password)}@`
+        ? `${encodeURIComponent(decodeURIComponent(parsed.username))}:${encodeURIComponent(decodeURIComponent(parsed.password))}@`
         : ''
 
       const searchParams = new URLSearchParams(parsed.searchParams)
-      const opts = searchParams.toString()
+      if (!searchParams.has('authSource')) {
+        searchParams.set('authSource', 'admin')
+      }
+      if (!searchParams.has('ssl') && !searchParams.has('tls')) {
+        searchParams.set('ssl', 'true')
+      }
 
-      // Atlas requires TLS when using non-SRV connection strings
-      const tlsParam = opts ? '&ssl=true' : '?ssl=true'
-      const resolved = `mongodb://${authPart}${hosts}${parsed.pathname}${opts ? '?' + opts + '&ssl=true' : '?ssl=true'}`
+      const opts = searchParams.toString()
+      const dbPath = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '/bridge'
+      return `mongodb://${authPart}${hosts}${dbPath}?${opts}`
+    }
+
+    // Try 1: DNS-over-HTTPS via Google (most reliable, bypasses ISP DNS blocks)
+    try {
+      console.log('🔍 Resolving SRV via Google DNS-over-HTTPS:', srvName)
+      const records = await resolveSrvViaDoH(srvName)
+      const resolved = buildResolvedUri(records)
       console.log('✅ SRV resolved via DNS-over-HTTPS successfully')
       return resolved
     } catch (dohErr) {
@@ -84,24 +92,10 @@ async function resolveMongoUri(uri) {
 
     // Try 2: Native DNS with custom servers
     try {
-      dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1'])
+      dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1'])
       console.log('🔍 Resolving SRV via native DNS (Google):', srvName)
       const records = await dns.promises.resolveSrv(srvName)
-
-      const hosts = records
-        .sort((a, b) => a.priority - b.priority || b.weight - a.weight)
-        .map(r => `${r.name}:${r.port}`)
-        .join(',')
-
-      const authPart = parsed.username
-        ? `${decodeURIComponent(parsed.username)}:${decodeURIComponent(parsed.password)}@`
-        : ''
-
-      const searchParams = new URLSearchParams(parsed.searchParams)
-      const opts = searchParams.toString()
-
-      // Atlas requires TLS when using non-SRV connection strings
-      const resolved = `mongodb://${authPart}${hosts}${parsed.pathname}${opts ? '?' + opts + '&ssl=true' : '?ssl=true'}`
+      const resolved = buildResolvedUri(records)
       console.log('✅ SRV resolved via native DNS successfully')
       return resolved
     } catch (nativeErr) {
