@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
-import { BASE_URL } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 
 const knownEvents = [
@@ -8,6 +7,14 @@ const knownEvents = [
   'typing:start', 'typing:stop', 'message:read', 'unread:update',
   'user:online', 'user:offline',
 ]
+
+// Get backend URL - use env var or fallback to localhost:5000
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  // Development: connect to backend server directly
+  if (import.meta.env.DEV) return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000')
+  return window.location.origin
+}
 
 export function useSocket(handlers = {}) {
   const { user } = useAuth()
@@ -18,7 +25,7 @@ export function useSocket(handlers = {}) {
   useEffect(() => {
     if (!user) return
 
-    const socketUrl = BASE_URL || window.location.origin
+    const socketUrl = getSocketUrl()
     const socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],

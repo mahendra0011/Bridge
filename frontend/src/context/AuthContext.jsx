@@ -27,6 +27,13 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const data = await api.post('/api/auth/login', { email, password })
     setUser(data.user)
+    // Fetch full session (company/agency data) so role-specific dashboards work immediately
+    try {
+      const me = await api.get('/api/auth/me')
+      setUser(me.user)
+      setCompany(me.company || null)
+      setAgency(me.agency || null)
+    } catch { /* login succeeded, this is best-effort */ }
     return data.user
   }, [])
 

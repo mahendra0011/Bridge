@@ -47,13 +47,20 @@ export default function AgencySettings() {
 
   const toggle = (key) => () => setSettings(prev => ({ ...prev, [key]: !prev[key] }))
 
-  const SettingsSection = ({ title, desc, children }) => (
-    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-      <div className="border-b border-slate-100 px-6 py-4">
-        <h3 className="font-bold">{title}</h3>
-        {desc && <p className="text-xs text-slate-500 mt-0.5">{desc}</p>}
+  const SettingsSection = ({ title, desc, icon: Icon, children }) => (
+    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+      <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+        {Icon && (
+          <div className="grid size-8 place-items-center rounded-lg bg-primary/10">
+            <Icon className="size-4 text-primary" />
+          </div>
+        )}
+        <div>
+          <h3 className="font-bold text-slate-800">{title}</h3>
+          {desc && <p className="text-xs text-slate-500 mt-0.5">{desc}</p>}
+        </div>
       </div>
-      <div className="px-6 py-4">{children}</div>
+      <div className="px-6 py-5">{children}</div>
     </div>
   )
 
@@ -83,10 +90,15 @@ export default function AgencySettings() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-4xl space-y-8 px-4 py-8 sm:px-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Settings</h2>
-            <p className="mt-1 text-sm text-slate-500">Manage your agency account preferences.</p>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-11 place-items-center rounded-xl bg-primary/10">
+              <Settings className="size-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold sm:text-3xl">Settings</h1>
+              <p className="mt-1 text-sm text-slate-500">Manage your agency account preferences.</p>
+            </div>
           </div>
           <button onClick={handleSave} disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60">
@@ -95,7 +107,7 @@ export default function AgencySettings() {
         </div>
 
         {/* Notifications */}
-        <SettingsSection title="Notifications" desc="Control what notifications you receive.">
+        <SettingsSection title="Notifications" desc="Control what notifications you receive." icon={Bell}>
           <div className="divide-y divide-slate-100">
             <ToggleRow label="Email Notifications" desc="Receive notifications via email" value={settings.emailNotifications} onChange={toggle('emailNotifications')} />
             <ToggleRow label="Push Notifications" desc="Receive browser push notifications" value={settings.pushNotifications} onChange={toggle('pushNotifications')} />
@@ -107,12 +119,12 @@ export default function AgencySettings() {
         </SettingsSection>
 
         {/* Profile Settings */}
-        <SettingsSection title="Profile & Visibility" desc="Control how your agency appears to others.">
+        <SettingsSection title="Profile & Visibility" desc="Control how your agency appears to others." icon={Globe}>
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Profile Visibility</label>
               <select value={settings.profileVisibility} onChange={e => setSettings(p => ({ ...p, profileVisibility: e.target.value }))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary">
+                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                 <option value="public">Public — Anyone can see your profile</option>
                 <option value="registered">Registered Users Only</option>
                 <option value="private">Private — Only your team can see</option>
@@ -122,7 +134,7 @@ export default function AgencySettings() {
               <div>
                 <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Language</label>
                 <select value={settings.language} onChange={e => setSettings(p => ({ ...p, language: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary">
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="en">English</option>
                   <option value="hi">हिन्दी (Hindi)</option>
                 </select>
@@ -130,7 +142,7 @@ export default function AgencySettings() {
               <div>
                 <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Timezone</label>
                 <select value={settings.timezone} onChange={e => setSettings(p => ({ ...p, timezone: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary">
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
                   <option value="UTC">UTC</option>
                 </select>
@@ -140,7 +152,7 @@ export default function AgencySettings() {
         </SettingsSection>
 
         {/* Account */}
-        <SettingsSection title="Account" desc="Manage your account settings.">
+        <SettingsSection title="Account" desc="Manage your account settings." icon={User}>
           <div className="space-y-4">
             <div className="flex items-center justify-between py-2">
               <div>

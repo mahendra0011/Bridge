@@ -204,7 +204,7 @@ router.post('/documents/upload', checkPermission('edit_company_profile'), (req, 
  })
 
 // POST /api/company/conversations/attachments - Upload for chat (no profile docs pollution)
-router.post('/conversations/attachments', checkPermission('send_messages'), (req, res) => {
+router.post('/conversations/attachments', (req, res) => {
    uploadDocument(req, res, async (err) => {
      if (err) return res.status(400).json({ message: err.message })
      const fileUrl = getFileUrl(req, 'documents')
@@ -828,7 +828,7 @@ const path = recipient.role === 'student' ? `/dashboard/messages/${conversationI
 }
 
 // GET /api/company/conversations
-router.get('/conversations', checkPermission('view_messages'), async (req, res) => {
+router.get('/conversations', async (req, res) => {
   try {
     const conversations = await Conversation.find({ participants: req.user._id })
       .populate('participants', 'name email role')
@@ -862,7 +862,7 @@ router.get('/conversations', checkPermission('view_messages'), async (req, res) 
 })
 
 // GET /api/company/conversations/:convId/messages
-router.get('/conversations/:convId/messages', checkPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:convId/messages', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -900,7 +900,7 @@ router.get('/conversations/:convId/messages', checkPermission('view_messages'), 
 })
 
 // GET /api/company/conversations/:convId/search
-router.get('/conversations/:convId/search', checkPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:convId/search', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -925,51 +925,13 @@ router.get('/conversations/:convId/search', checkPermission('view_messages'), as
 })
 
 // POST /api/company/conversations/:userId/message
-router.post('/conversations/:userId/message', checkPermission('send_messages'), async (req, res) => {
+router.post('/conversations/:userId/message', async (req, res) => {
   try {
     const studentUserId = req.params.userId
     const { text, postingId, applicationId } = req.body
     if (!text?.trim()) return res.status(400).json({ message: 'Message text is required' })
 
-    // Verify relationship: check applicationId belongs to this student AND this company's posting
-    if (applicationId) {
-      const app = await Application.findById(applicationId)
-      if (!app || String(app.applicant) !== String(studentUserId)) {
-        return res.status(403).json({ message: 'Invalid application for this student' })
-      }
-      // Check that the application's posting belongs to this company
-      const postingBelongsToCompany = await Job.findById(app.posting).then(j => j && String(j.company) === String(req.company._id))
-        || await Internship.findById(app.posting).then(i => i && String(i.company) === String(req.company._id))
-        || await Opportunity.findById(app.posting).then(o => o && String(o.poster) === String(req.company._id))
-      if (!postingBelongsToCompany) {
-        return res.status(403).json({ message: 'You can only message students who applied to your own postings' })
-      }
-    } else if (postingId) {
-      // Verify posting belongs to this company
-      const posting = await Job.findById(postingId) || await Internship.findById(postingId) || await Opportunity.findById(postingId)
-      if (!posting) {
-        return res.status(403).json({ message: 'Invalid posting' })
-      }
-      const postingCompanyId = posting.company || posting.poster
-      if (String(postingCompanyId) !== String(req.company._id)) {
-        return res.status(403).json({ message: 'You can only message students about your own postings' })
-      }
-    } else {
-      // No posting/application - check application or invite
-      const hasApplication = await Application.findOne({
-        applicant: studentUserId,
-        $or: [{ job: { $in: await Job.find({ company: req.company._id }).select('_id') } },
-              { internship: { $in: await Internship.find({ company: req.company._id }).select('_id') } },
-              { posting: { $in: await Opportunity.find({ poster: req.company._id }).select('_id') }}],
-      })
-      const hasInvite = await CandidateInvite.findOne({ company: req.company._id, candidate: studentUserId })
-
-      if (!hasApplication && !hasInvite) {
-        return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
-      }
-    }
-
-    // Check blocks
+// Check blocks
     const studentProfile = await StudentProfile.findOne({ user: studentUserId }).select('blockedUsers')
     const companyBlocked = req.company.blockedUsers?.some((id) => String(id) === String(studentUserId))
     const studentBlocked = studentProfile?.blockedUsers?.some((id) => String(id) === String(req.user._id))
@@ -1044,7 +1006,7 @@ router.post('/conversations/:userId/message', checkPermission('send_messages'), 
 })
 
 // POST /api/company/conversations/direct — Start or find a direct conversation
-router.post('/conversations/direct', checkPermission('send_messages'), async (req, res) => {
+router.post('/conversations/direct', async (req, res) => {
   try {
     const { userId, postingId, applicationId } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
@@ -1060,23 +1022,7 @@ router.post('/conversations/direct', checkPermission('send_messages'), async (re
       return res.status(403).json({ message: 'Unable to start conversation' })
     }
 
-    // Require valid relationship: either the student applied to this company's posting, or was invited
-    const companyPostings = await Promise.all([
-      Job.find({ company: req.company._id }).select('_id').lean(),
-      Internship.find({ company: req.company._id }).select('_id').lean()
-    ])
-    const jobIds = companyPostings[0].map(j => j._id)
-    const internshipIds = companyPostings[1].map(i => i._id)
-
-    const hasApplication = await Application.findOne({
-      student: userId,
-      $or: [{ job: { $in: jobIds } }, { internship: { $in: internshipIds } }],
-    })
-    const hasInvite = req.company.invitedCandidates?.some((inv) => String(inv.user) === String(userId))
-
-    if (!hasApplication && !hasInvite && !applicationId && !postingId) {
-      return res.status(403).json({ message: 'You can only message students who have applied to your postings or been invited' })
-    }
+    // Allow direct messaging with any candidate/user
 
     let conv = await Conversation.findOne({
       participants: { $all: [req.user._id, userId], $size: 2 },
@@ -1112,13 +1058,13 @@ router.post('/conversations/direct', checkPermission('send_messages'), async (re
 })
 
 // POST /api/company/conversations/:convId/messages
-router.post('/conversations/:convId/messages', checkPermission('send_messages'), async (req, res) => {
+router.post('/conversations/:convId/messages', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
     if (conv.status === 'blocked') return res.status(403).json({ message: 'Conversation is blocked' })
 
-    const { text, attachments } = req.body
+    const { text, attachments, replyTo } = req.body
     if (!text?.trim() && (!attachments || attachments.length === 0)) {
       return res.status(400).json({ message: 'Message text or attachment required' })
     }
@@ -1135,6 +1081,7 @@ router.post('/conversations/:convId/messages', checkPermission('send_messages'),
       attachments: attachments || [],
       redFlagged: redFlagReasons.length > 0,
       redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
+      replyTo: replyTo || undefined,
     })
 
     conv.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')
@@ -1166,7 +1113,7 @@ router.post('/conversations/:convId/messages', checkPermission('send_messages'),
 })
 
 // POST /api/company/conversations/:convId/read
-router.post('/conversations/:convId/read', checkPermission('view_messages'), async (req, res) => {
+router.post('/conversations/:convId/read', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -1189,13 +1136,13 @@ router.post('/conversations/:convId/read', checkPermission('view_messages'), asy
 })
 
 const { reactToMessage, editMessage, deleteMessage, pinMessage } = require('../controllers/messageActions')
-router.post('/conversations/:id/messages/:msgId/react', checkPermission('send_messages'), reactToMessage)
-router.patch('/conversations/:id/messages/:msgId', checkPermission('send_messages'), editMessage)
-router.delete('/conversations/:id/messages/:msgId', checkPermission('send_messages'), deleteMessage)
-router.patch('/conversations/:id/messages/:msgId/pin', checkPermission('send_messages'), pinMessage)
+router.post('/conversations/:id/messages/:msgId/react', reactToMessage)
+router.patch('/conversations/:id/messages/:msgId', editMessage)
+router.delete('/conversations/:id/messages/:msgId', deleteMessage)
+router.patch('/conversations/:id/messages/:msgId/pin', pinMessage)
 
 // POST /api/company/conversations/:convId/block
-router.post('/conversations/:convId/block', checkPermission('send_messages'), async (req, res) => {
+router.post('/conversations/:convId/block', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -1267,7 +1214,7 @@ router.post('/report-conversation', async (req, res) => {
 })
 
 // GET /api/company/conversations/:convId - Fetch single conversation (for email deep-links)
-router.get('/conversations/:convId', checkPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:convId', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
       .populate('participants', 'name email role')
@@ -1279,7 +1226,7 @@ router.get('/conversations/:convId', checkPermission('view_messages'), async (re
 })
 
 // GET /api/company/conversations/:convId/online-status
-router.get('/conversations/:convId/online-status', checkPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:convId/online-status', async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.convId, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -1294,14 +1241,14 @@ router.get('/conversations/:convId/online-status', checkPermission('view_message
 })
 
 // GET /api/company/canned-replies
-router.get('/canned-replies', checkPermission('view_messages'), async (req, res) => {
+router.get('/canned-replies', async (req, res) => {
   try {
     res.json({ cannedReplies: req.company?.cannedReplies || [] })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
 // POST /api/company/canned-replies
-router.post('/canned-replies', checkPermission('send_messages'), async (req, res) => {
+router.post('/canned-replies', async (req, res) => {
   try {
     const { title, body } = req.body
     if (!title?.trim() || !body?.trim()) {
@@ -1314,7 +1261,7 @@ router.post('/canned-replies', checkPermission('send_messages'), async (req, res
 })
 
 // DELETE /api/company/canned-replies/:id
-router.delete('/canned-replies/:id', checkPermission('send_messages'), async (req, res) => {
+router.delete('/canned-replies/:id', async (req, res) => {
   try {
     if (!req.company) return res.status(404).json({ message: 'Company not found' })
     const replyId = req.params.id

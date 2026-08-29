@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { SiteLayout } from '@/components/site/site-layout'
 import { JobCard, JobCardSkeleton } from '@/components/site/job-card'
 import { HorizontalFilters } from '@/components/site/horizontal-filters'
@@ -10,7 +11,12 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function BrowseJobs() {
   const { user } = useAuth()
-  const [filters, setFilters] = useState(defaultFilters)
+  const [searchParams] = useSearchParams()
+  const [filters, setFilters] = useState({
+    ...defaultFilters,
+    query: searchParams.get('query') || '',
+    location: searchParams.get('location') || '',
+  })
   const [page, setPage] = useState(1)
   const [results, setResults] = useState([])
   const [pages, setPages] = useState(1)
@@ -20,7 +26,7 @@ export default function BrowseJobs() {
   const [appliedMap, setAppliedMap] = useState({})
 
   useEffect(() => {
-    if (!user) return
+    if (!user || user.role !== 'student') return
     api.get('/api/student/applications')
       .then(data => {
         const map = {}

@@ -221,20 +221,24 @@ export function SocialMessageBubble({
               type="text"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              className="w-full rounded border border-white/30 bg-white/10 px-2 py-1 text-sm text-white outline-none focus:border-white"
+              className={`w-full rounded border px-2 py-1 text-sm outline-none ${
+                isMe
+                  ? 'border-white/30 bg-white/10 text-white focus:border-white'
+                  : 'border-slate-300 bg-white text-slate-800 focus:border-primary'
+              }`}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
             />
-            <div className="flex justify-end gap-2 text-xs">
+            <div className={`flex justify-end gap-2 text-xs ${isMe ? 'text-white' : 'text-slate-800'}`}>
               <button
                 onClick={() => setIsEditing(false)}
-                className="rounded bg-white/20 px-2 py-0.5 hover:bg-white/30"
+                className={`rounded px-2 py-0.5 ${isMe ? 'bg-white/20 hover:bg-white/30' : 'bg-slate-200 hover:bg-slate-300'}`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="rounded bg-white px-2 py-0.5 font-semibold text-primary hover:bg-white/90"
+                className="rounded bg-primary px-2 py-0.5 font-semibold text-white hover:bg-primary/90"
               >
                 Save
               </button>

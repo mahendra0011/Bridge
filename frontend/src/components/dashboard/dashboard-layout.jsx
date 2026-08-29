@@ -31,8 +31,10 @@ sections: [
        { label: 'Document', icon: FolderOpen, to: '/dashboard/documents' },
        { label: 'My Listings', icon: Briefcase, to: '/dashboard/listings' },
        { label: 'Community Hub', icon: MessageCircle, to: '/dashboard/community' },
-       { label: 'Support Ticket', icon: Ticket, to: '/tickets' },
-       { label: 'Setting', icon: Settings, to: '/dashboard/settings' },
+{ label: 'Support Ticket', icon: Ticket, to: '/tickets' },
+        { separator: true },
+        { label: 'Resume Builder', icon: FileText, to: '/dashboard/resume-builder' },
+        { label: 'Setting', icon: Settings, to: '/dashboard/settings' },
      ],
     quickLinks: []
   },
@@ -68,7 +70,7 @@ company: {
     sections: [
       { label: 'Home', icon: Home, to: '/' },
       { label: 'Overview', icon: LayoutDashboard, to: '/agency/dashboard' },
-      { label: 'Post New Gig/Project', icon: PlusCircle, to: '/company/post' },
+      { label: 'Post New Gig/Project', icon: PlusCircle, to: '/agency/post-gig' },
       { label: 'My Postings', icon: FileText, to: '/agency/postings' },
       { label: 'Applicant Pipeline', icon: LayoutDashboard, to: '/agency/pipeline' },
       { label: 'Team Management', icon: Users, to: '/agency/team' },

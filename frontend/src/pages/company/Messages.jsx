@@ -94,6 +94,7 @@ export default function CompanyMessages() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const { convId } = useParams()
 
   const { emit } = useSocket({
     'message:new': useCallback((data) => {
@@ -104,6 +105,7 @@ export default function CompanyMessages() {
       if (convId && String(data.conversation) === convId) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === data._id)) return prev
+          if (String(data.sender?._id || data.sender) === String(user?._id)) return prev
           return [...prev, data]
         })
       }
@@ -114,7 +116,7 @@ export default function CompanyMessages() {
             : c
         )
       )
-    }, []),
+    }, [user?._id]),
     'message:updated': useCallback((data) => {
       setMessages((prev) => prev.map((m) => (m._id === data.messageId ? { ...m, ...data.updates } : m)))
     }, []),
@@ -216,7 +218,6 @@ useEffect(() => {
 
    // Handle deep-link to conversation from URL param
    useEffect(() => {
-     const convId = useParams().convId
      if (!convId || !user) return
      const existing = conversations.find(c => c._id === convId)
      if (existing) {
@@ -230,9 +231,9 @@ useEffect(() => {
            })
            setActiveConv(data.conversation)
          }
-       }).catch(() => {})
-     }
-   }, [conversations, user])
+        }).catch(() => {})
+      }
+   }, [convId, conversations, user])
 
   useEffect(() => {
     const handleClickOutside = (e) => {

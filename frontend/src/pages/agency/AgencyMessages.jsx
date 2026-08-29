@@ -35,6 +35,7 @@ export default function AgencyMessages() {
   const [search, setSearch] = useState('')
   const [sending, setSending] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  const { convId } = useParams()
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
@@ -57,6 +58,7 @@ const textEmojiPickerRef = useRef(null)
       if (convId && String(data.conversation || data._id?.conversation) === convId) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === data._id)) return prev
+          if (String(data.sender?._id || data.sender) === String(user?._id)) return prev
           return [...prev, data]
         })
       }
@@ -119,13 +121,12 @@ useEffect(() => { loadConversations() }, [])
 
   // Handle deep-link to conversation from URL param or ?userId=X
    useEffect(() => {
-     const convId = useParams().convId
-     const userId = searchParams.get('userId')
+    const userId = searchParams.get('userId')
 
-     if (!user) return
+    if (!user) return
 
-     // Deep-link to existing conversation via URL param
-     if (convId) {
+    // Deep-link to existing conversation via URL param
+    if (convId) {
        const existing = conversations.find(c => c._id === convId)
        if (existing) {
          setActiveChat(existing)
@@ -151,7 +152,7 @@ useEffect(() => { loadConversations() }, [])
         setSearchParams({}, { replace: true })
       })
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
-  }, [searchParams, user, setSearchParams])
+  }, [convId, conversations, searchParams, user, setSearchParams])
 
 useEffect(() => {
       activeIdRef.current = activeChat?._id || null

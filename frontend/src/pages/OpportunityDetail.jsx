@@ -439,6 +439,21 @@ export default function OpportunityDetail() {
 
   const isOwner = user?._id === String(poster._id)
 
+  const handleMessagePoster = () => {
+    const posterId = poster._id || poster
+    if (!posterId) {
+      toast.error('Cannot message poster')
+      return
+    }
+    const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
+    const redirectUrl = `${msgBase}?userId=${posterId}`
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
+      return
+    }
+    navigate(redirectUrl)
+  }
+
   return (
     <SiteLayout>
       <div className="bg-surface px-6 py-10">
@@ -541,34 +556,28 @@ export default function OpportunityDetail() {
                     <span><TrendingUp className="size-3.5 inline mr-1 text-slate-400" /><strong>{opportunity.views > 0 ? `${((opportunity.applicantsCount || 0) / opportunity.views * 100).toFixed(1)}%` : '—'}</strong> conversion</span>
                   </div>
                 </div>
-              ) : applied ? (
-                <div className="flex flex-col items-end gap-2">
-                  <span className="rounded-xl bg-emerald-600 px-6 py-2 font-bold text-white"><Check className="size-4 inline mr-1" /> {applicationStatus || 'Applied'}</span>
-                  <button onClick={handleWithdraw} className="text-xs font-semibold text-rose-600 hover:underline">Withdraw</button>
-                </div>
-              ) : canApply ? (
-                <div className="flex gap-2">
-                  <Button onClick={() => setShowApply(true)} className="rounded-xl bg-primary px-6 py-2.5 font-bold text-primary-foreground hover:bg-primary/90">
-                    Express Interest
-                  </Button>
-                  <Button onClick={() => {
-                    if (!poster._id) { toast.error('Cannot message poster'); return }
-                    const msgBase = user?.role === 'company' ? '/company/messages' : user?.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
-                    const redirectUrl = `${msgBase}?userId=${poster._id}`
-                    if (!user) { navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`); return }
-                    if (user.role === 'student' || user.role === 'company' || user.role === 'agency') {
-                      navigate(redirectUrl)
-                    } else {
-                      toast.error('Messaging is only available for students, companies, and agencies')
-                    }
-                  }} variant="outline" className="rounded-xl border-slate-200 px-4 py-2.5 font-semibold text-slate-600 hover:bg-slate-50">
-                    <MessageSquare className="size-4" />
-                  </Button>
-                </div>
-              ) : isFullyFilled ? (
-                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-3 text-base font-bold text-slate-400 cursor-not-allowed"><CheckCircle className="size-4" /> Positions Filled</span>
               ) : (
-                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-3 text-base font-bold text-slate-600 cursor-not-allowed"><XCircle className="size-4" /> Closed</span>
+                <div className="flex items-center gap-2">
+                  {!isOwner && (
+                    <Button onClick={handleMessagePoster} variant="outline" className="rounded-xl border-slate-200 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 gap-1.5">
+                      <MessageSquare className="size-4 text-primary" /> Message Poster
+                    </Button>
+                  )}
+                  {applied ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="rounded-xl bg-emerald-600 px-6 py-2.5 font-bold text-white"><Check className="size-4 inline mr-1" /> {applicationStatus || 'Applied'}</span>
+                      <button onClick={handleWithdraw} className="text-xs font-semibold text-rose-600 hover:underline">Withdraw</button>
+                    </div>
+                  ) : canApply ? (
+                    <Button onClick={() => setShowApply(true)} className="rounded-xl bg-primary px-6 py-2.5 font-bold text-primary-foreground hover:bg-primary/90">
+                      Express Interest
+                    </Button>
+                  ) : isFullyFilled ? (
+                    <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-3 text-base font-bold text-slate-400 cursor-not-allowed"><CheckCircle className="size-4" /> Positions Filled</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-3 text-base font-bold text-slate-600 cursor-not-allowed"><XCircle className="size-4" /> Closed</span>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -822,9 +831,19 @@ export default function OpportunityDetail() {
                   {poster.completionRate > 0 && <span className="text-emerald-600 font-semibold">{poster.completionRate}% completion</span>}
                 </div>
               )}
-              <Link to={`/person/${poster._id || poster}`} className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                <UserCheck className="size-3.5" /> View Full Profile <ExternalLink className="size-3" />
-              </Link>
+              <div className="mt-4 flex flex-col gap-2">
+                {!isOwner && (
+                  <button
+                    onClick={handleMessagePoster}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-white hover:bg-primary/90 transition-colors w-full"
+                  >
+                    <MessageSquare className="size-3.5" /> Message Poster
+                  </button>
+                )}
+                <Link to={`/person/${poster._id || poster}`} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors w-full">
+                  <UserCheck className="size-3.5" /> View Full Profile <ExternalLink className="size-3" />
+                </Link>
+              </div>
             </div>
           )}
 

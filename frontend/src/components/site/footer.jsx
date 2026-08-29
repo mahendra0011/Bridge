@@ -34,7 +34,7 @@ function FooterCol({ title, links }) {
 
 export function Footer() {
   const location = useLocation()
-  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/company') || location.pathname.startsWith('/agency')
+  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/company') || location.pathname.startsWith('/agency') || location.pathname.startsWith('/admin')
   
   if (isDashboard) return null
   

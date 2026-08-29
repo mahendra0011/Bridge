@@ -248,7 +248,8 @@ export default function PersonDetail() {
 
   const handleMessage = async () => {
     if (!user) { toast.error('Log in to message this person'); return }
-    navigate(`/dashboard/messages?userId=${id}`)
+    const msgBase = user.role === 'company' ? '/company/messages' : user.role === 'agency' ? '/agency/messages' : '/dashboard/messages'
+    navigate(`${msgBase}?userId=${id}`)
   }
 
   if (loading) {

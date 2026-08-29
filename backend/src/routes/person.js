@@ -325,7 +325,7 @@ router.get('/conversations', protect, async (req, res) => {
 // POST /api/person/conversations/:id/messages - Send message
 router.post('/conversations/:id/messages', protect, async (req, res) => {
   try {
-    const { text, attachments } = req.body
+    const { text, attachments, replyTo } = req.body
     if (!text?.trim() && (!attachments || attachments.length === 0)) {
       return res.status(400).json({ message: 'Message text or attachment required' })
     }
@@ -344,6 +344,7 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
       attachments: attachments || [],
       redFlagged: redFlagReasons.length > 0,
       redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
+      replyTo: replyTo || undefined,
     })
 
     conv.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')

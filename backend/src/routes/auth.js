@@ -30,7 +30,7 @@ function hashOtp(otp) {
 function validatePasswordStrength(value) {
   const result = zxcvbn(value)
   if (result.score < 3) {
-    throw new Error('Password is too weak. ' + result.feedback.suggestions?.[0] || 'Use a stronger password.')
+    throw new Error('Password is too weak. ' + (result.feedback.suggestions?.[0] || 'Use a stronger password.'))
   }
   return true
 }
@@ -473,8 +473,8 @@ router.post('/logout', protect, async (req, res) => {
   res.json({ message: 'Logged out' })
 })
 
-// GET /api/auth/csrf-token - Get CSRF token for authenticated requests
-router.get('/csrf-token', protect, (req, res) => {
+// GET /api/auth/csrf-token - Get CSRF token for requests
+router.get('/csrf-token', (req, res) => {
   const token = crypto.randomBytes(32).toString('hex')
   res.cookie('csrf-token', token, {
     httpOnly: false,

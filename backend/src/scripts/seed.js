@@ -101,30 +101,30 @@ const USER_COVER_URLS = [
 
 // ─── Demo account credentials ────────────────────────────────────────────────
 const COMPANIES = [
-  { name: 'Acme Corp', industry: 'Technology', size: '50-200', location: 'San Francisco, CA' },
-  { name: 'TechNova', industry: 'Technology', size: '200-500', location: 'Bangalore, India' },
-  { name: 'DataPulse', industry: 'Data Science', size: '10-50', location: 'Remote' },
-  { name: 'DesignStudio', industry: 'Design', size: '10-50', location: 'New York, NY' },
-  { name: 'CloudBase', industry: 'Cloud Computing', size: '100-300', location: 'Seattle, WA' },
-  { name: 'FinLeap', industry: 'Fintech', size: '50-200', location: 'Mumbai, India' },
-  { name: 'HealthTech Inc', industry: 'Healthcare', size: '200-500', location: 'Boston, MA' },
-  { name: 'GreenEnergy Labs', industry: 'Clean Energy', size: '50-200', location: 'Austin, TX' },
-  { name: 'EduSpark', industry: 'EdTech', size: '10-50', location: 'Remote' },
-  { name: 'CyberShield', industry: 'Cybersecurity', size: '100-300', location: 'Washington, DC' },
-  { name: 'AILabs', industry: 'Artificial Intelligence', size: '50-200', location: 'Toronto, Canada' },
-  { name: 'GameForge', industry: 'Gaming', size: '100-300', location: 'Los Angeles, CA' },
-  { name: 'RetailNext', industry: 'E-commerce', size: '500-1000', location: 'Chicago, IL' },
-  { name: 'BioGenix', industry: 'Biotechnology', size: '50-200', location: 'San Diego, CA' },
-  { name: 'SpaceWorks', industry: 'Aerospace', size: '200-500', location: 'Denver, CO' },
+  { name: 'Acme Corp', industry: 'Technology', size: '50-200', location: 'San Francisco, CA', website: 'https://acmecorp.io', foundedYear: 2015, description: 'Acme Corp builds next-generation developer tools and cloud infrastructure trusted by over 5000 engineering teams worldwide.', culture: 'Fast-paced engineering-first culture with weekly hackathons and open-source Fridays.', perks: ['Health insurance', 'Stock options', 'Remote work', 'Learning budget', 'Free lunch'], linkedin: 'https://linkedin.com/company/acmecorp', contactPerson: 'Sarah Mitchell', designation: 'HR Manager' },
+  { name: 'TechNova', industry: 'Technology', size: '200-500', location: 'Bangalore, India', website: 'https://technova.io', foundedYear: 2018, description: 'TechNova is a leading AI-powered enterprise software company developing intelligent automation solutions for Fortune 500 clients across 30 countries.', culture: 'Innovation-driven environment with flat hierarchy. We celebrate failures as learning and ship fast.', perks: ['Health insurance', 'Stock options', 'Flexible hours', 'Gym membership', 'Learning budget'], linkedin: 'https://linkedin.com/company/technova', contactPerson: 'Rajesh Kumar', designation: 'Talent Acquisition' },
+  { name: 'DataPulse', industry: 'Data Science', size: '10-50', location: 'Remote', website: 'https://datapulse.ai', foundedYear: 2020, description: 'DataPulse specializes in real-time data analytics and machine learning pipelines for e-commerce and fintech companies processing billions of events daily.', culture: 'Fully remote async-first culture with quarterly team retreats. Strong focus on work-life balance.', perks: ['Remote work', 'Flexible hours', 'Learning budget', 'Paid time off'], linkedin: 'https://linkedin.com/company/datapulse', contactPerson: 'Emily Zhang', designation: 'Founder' },
+  { name: 'DesignStudio', industry: 'Design', size: '10-50', location: 'New York, NY', website: 'https://designstudio.co', foundedYear: 2017, description: 'DesignStudio is a boutique UX/UI design agency in NYC crafting beautiful digital experiences for startups and Fortune 500 brands with 40+ designers.', culture: 'Creative-first studio with open workspaces, weekly design critiques, and art exhibitions.', perks: ['Flexible hours', 'Free lunch', 'Mentorship', 'Networking events'], linkedin: 'https://linkedin.com/company/designstudio', contactPerson: 'Marco Rivera', designation: 'Founder' },
+  { name: 'CloudBase', industry: 'Cloud Computing', size: '100-300', location: 'Seattle, WA', website: 'https://cloudbase.dev', foundedYear: 2016, description: 'CloudBase provides serverless cloud infrastructure and managed database services powering 10,000+ applications with 99.99% uptime guarantee.', culture: 'Engineering excellence is core. Bi-weekly tech talks, peer code reviews, and heavy investment in developer tooling.', perks: ['Stock options', 'Remote work', 'Health insurance', 'Learning budget', 'On-call pay'], linkedin: 'https://linkedin.com/company/cloudbase', contactPerson: 'Jennifer Park', designation: 'HR Manager' },
+  { name: 'FinLeap', industry: 'Fintech', size: '50-200', location: 'Mumbai, India', website: 'https://finleap.in', foundedYear: 2019, description: 'FinLeap is a fast-growing fintech startup building digital payment solutions and neo-banking products for the Indian market with 2M+ users.', culture: 'Move fast culture with weekly sprint demos and monthly town halls. Strong ESOP programme for all employees.', perks: ['Stock options', 'Health insurance', 'Flexible hours', 'Free lunch', 'Travel allowance'], linkedin: 'https://linkedin.com/company/finleap', contactPerson: 'Prateek Jain', designation: 'Recruiter' },
+  { name: 'HealthTech Inc', industry: 'Healthcare', size: '200-500', location: 'Boston, MA', website: 'https://healthtechinc.com', foundedYear: 2014, description: 'HealthTech Inc develops AI-powered diagnostic tools and telemedicine platforms used by hospitals and clinics across North America serving 5M+ patients.', culture: 'Mission-driven culture focused on improving healthcare outcomes with regular volunteer days and health programmes.', perks: ['Health insurance', 'Paid time off', 'Remote work', 'Gym membership', 'Mentorship'], linkedin: 'https://linkedin.com/company/healthtechinc', contactPerson: 'Dr. Lisa Chen', designation: 'HR Manager' },
+  { name: 'GreenEnergy Labs', industry: 'Clean Energy', size: '50-200', location: 'Austin, TX', website: 'https://greenenergylabs.com', foundedYear: 2018, description: 'GreenEnergy Labs develops solar panel optimization software and smart grid management solutions increasing solar farm efficiency by up to 35%.', culture: 'Sustainability-focused team with quarterly green initiatives. Dog-friendly office with rooftop solar panels.', perks: ['Remote work', 'Health insurance', 'Learning budget', 'Paid time off', 'Free lunch'], linkedin: 'https://linkedin.com/company/greenenergylabs', contactPerson: 'David Thompson', designation: 'Talent Acquisition' },
+  { name: 'EduSpark', industry: 'EdTech', size: '10-50', location: 'Remote', website: 'https://eduspark.io', foundedYear: 2021, description: 'EduSpark is an ed-tech platform offering live coding bootcamps and career coaching for students with 50K+ graduates and 85% placement rate.', culture: 'Student-first mentality. Remote-only team across 12 cities with weekly learning hours and book clubs.', perks: ['Remote work', 'Flexible hours', 'Learning budget', 'Mentorship'], linkedin: 'https://linkedin.com/company/eduspark', contactPerson: 'Ankit Mehta', designation: 'Founder' },
+  { name: 'CyberShield', industry: 'Cybersecurity', size: '100-300', location: 'Washington, DC', website: 'https://cybershield.io', foundedYear: 2013, description: 'CyberShield provides enterprise-grade cybersecurity solutions including threat detection, incident response, and compliance automation for government and finance.', culture: 'Security-first mindset with red team/blue team exercises and strong emphasis on continuous learning and certifications.', perks: ['Health insurance', 'Stock options', 'Learning budget', 'On-call pay', 'Paid time off'], linkedin: 'https://linkedin.com/company/cybershield', contactPerson: 'Michael Roberts', designation: 'HR Manager' },
+  { name: 'AILabs', industry: 'Artificial Intelligence', size: '50-200', location: 'Toronto, Canada', website: 'https://ailabs.ai', foundedYear: 2019, description: 'AILabs builds foundation models and AI research tools. Our open-source LLM toolkit is used by 100K+ researchers and developers for NLP and computer vision.', culture: 'Research-oriented with weekly paper reading groups and 20% time for personal research projects.', perks: ['Remote work', 'Stock options', 'Learning budget', 'Flexible hours', 'Networking events'], linkedin: 'https://linkedin.com/company/ailabs', contactPerson: 'Dr. Amanda Foster', designation: 'Talent Acquisition' },
+  { name: 'GameForge', industry: 'Gaming', size: '100-300', location: 'Los Angeles, CA', website: 'https://gameforge.gg', foundedYear: 2016, description: 'GameForge is an indie game studio creating immersive RPG and strategy games with a flagship title reaching 2M+ active players across platforms.', culture: 'Creative fun environment with gaming rooms, monthly game jams, and a passionate developer community.', perks: ['Flexible hours', 'Free lunch', 'Gym membership', 'Networking events', 'Creative freedom'], linkedin: 'https://linkedin.com/company/gameforge', contactPerson: 'Chris Anderson', designation: 'HR Manager' },
+  { name: 'RetailNext', industry: 'E-commerce', size: '500-1000', location: 'Chicago, IL', website: 'https://retailnext.com', foundedYear: 2012, description: 'RetailNext is a leading e-commerce infrastructure company powering online stores for 50K+ merchants handling $2B+ in annual transactions.', culture: 'Customer-obsessed culture with monthly NPS reviews. Cross-functional squads and bi-weekly ship-it days.', perks: ['Health insurance', 'Stock options', 'Remote work', 'Paid time off', 'Learning budget'], linkedin: 'https://linkedin.com/company/retailnext', contactPerson: 'Karen Williams', designation: 'Recruiter' },
+  { name: 'BioGenix', industry: 'Biotechnology', size: '50-200', location: 'San Diego, CA', website: 'https://biogenix.bio', foundedYear: 2017, description: 'BioGenix develops computational biology platforms for drug discovery and genomics research with AI models accelerating drug candidate identification by 60%.', culture: 'Interdisciplinary team of biologists, chemists, and engineers with collaborative research pods.', perks: ['Health insurance', 'Stock options', 'Learning budget', 'Paid time off', 'Mentorship'], linkedin: 'https://linkedin.com/company/biogenix', contactPerson: 'Dr. Rachel Green', designation: 'HR Manager' },
+  { name: 'SpaceWorks', industry: 'Aerospace', size: '200-500', location: 'Denver, CO', website: 'https://spaceworks.aero', foundedYear: 2015, description: 'SpaceWorks designs satellite communication systems and space debris tracking software with a ground station network spanning 15 countries.', culture: 'Mission-driven team passionate about space exploration with weekly lunch-and-learns and conference trips.', perks: ['Health insurance', 'Stock options', 'Learning budget', 'Travel allowance', 'Networking events'], linkedin: 'https://linkedin.com/company/spaceworks', contactPerson: 'James Morrison', designation: 'Talent Acquisition' },
 ]
 
 const AGENCIES = [
-  { name: 'Creative Cuts Studio', services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'], teamSize: '6-10', city: 'Mumbai, India' },
-  { name: 'PixelPerfect Designs', services: ['Graphic Design', 'Web Development', 'Social Media Management'], teamSize: '1-5', city: 'Remote' },
-  { name: 'ContentVibe Agency', services: ['Content Writing', 'Digital Marketing', 'SEO'], teamSize: '6-10', city: 'Bangalore, India' },
-  { name: 'MotionForge Studio', services: ['Animation/VFX', 'Video Editing', 'Graphic Design'], teamSize: '11-25', city: 'Delhi, India' },
-  { name: 'SocialSpark Media', services: ['Social Media Management', 'Digital Marketing', 'Content Writing'], teamSize: '1-5', city: 'Remote' },
-  { name: 'WebCraft Agency', services: ['Web Development', 'Graphic Design', 'SEO'], teamSize: '6-10', city: 'Hyderabad, India' },
+  { name: 'Creative Cuts Studio', services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'], teamSize: '6-10', city: 'Mumbai, India', website: 'https://creativecutsstudio.com', foundedYear: 2021, linkedin: 'https://linkedin.com/company/creativecutsstudio', description: 'Creative Cuts Studio is a Mumbai-based video editing and animation agency producing high-quality content for YouTube creators, brands, and media houses across India and Southeast Asia.' },
+  { name: 'PixelPerfect Designs', services: ['Graphic Design', 'Web Development', 'Social Media Management'], teamSize: '1-5', city: 'Remote', website: 'https://pixelperfectdesigns.co', foundedYear: 2022, linkedin: 'https://linkedin.com/company/pixelperfectdesigns', description: 'PixelPerfect Designs is a fully remote design studio crafting stunning brand identities, responsive websites, and social media campaigns for 100+ clients from startups to enterprise.' },
+  { name: 'ContentVibe Agency', services: ['Content Writing', 'Digital Marketing', 'SEO'], teamSize: '6-10', city: 'Bangalore, India', website: 'https://contentvibe.in', foundedYear: 2020, linkedin: 'https://linkedin.com/company/contentvibe', description: 'ContentVibe Agency is a Bangalore-based content and digital marketing powerhouse specializing in SEO-driven content strategies and performance marketing for SaaS and D2C brands.' },
+  { name: 'MotionForge Studio', services: ['Animation/VFX', 'Video Editing', 'Graphic Design'], teamSize: '11-25', city: 'Delhi, India', website: 'https://motionforge.studio', foundedYear: 2019, linkedin: 'https://linkedin.com/company/motionforgestudio', description: 'MotionForge Studio is a Delhi-based motion graphics and VFX studio delivering cinematic-quality animations for film, advertising, and gaming industries with 200+ projects delivered.' },
+  { name: 'SocialSpark Media', services: ['Social Media Management', 'Digital Marketing', 'Content Writing'], teamSize: '1-5', city: 'Remote', website: 'https://socialsparkmedia.com', foundedYear: 2023, linkedin: 'https://linkedin.com/company/socialsparkmedia', description: 'SocialSpark Media is a remote-first social media management agency helping D2C brands and personal creators grow their online presence through organic and paid strategies.' },
+  { name: 'WebCraft Agency', services: ['Web Development', 'Graphic Design', 'SEO'], teamSize: '6-10', city: 'Hyderabad, India', website: 'https://webcraftagency.in', foundedYear: 2020, linkedin: 'https://linkedin.com/company/webcraftagency', description: 'WebCraft Agency builds beautiful, high-performance websites and web applications for businesses in India and globally with expertise in React, Next.js, Shopify, and WordPress.' },
 ]
 
 const AGENCY_POSTING_TITLES = {
@@ -392,33 +392,50 @@ async function run() {
   }
 
   const company = await upsertUser(DEMO_COMPANY)
-  let companyProfile = await Company.findOne({ user: company._id })
-  if (!companyProfile) {
-    companyProfile = await Company.create({
-      user: company._id,
-      name: DEMO_COMPANY.companyName,
-      email: DEMO_COMPANY.email,
-      industry: 'Technology',
-      size: '50-200',
-      location: 'San Francisco, CA',
-      description: 'A leading technology company building innovative solutions.',
-      logoUrl: pick(COMPANY_LOGO_URLS),
-      bannerUrl: pick(COMPANY_BANNER_URLS),
-      photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
-      isVerified: true,
-    })
-    console.log('   Created company profile')
-  }
+  companyProfile = await Company.findOneAndUpdate(
+    { user: company._id },
+    {
+      $set: {
+        name: DEMO_COMPANY.companyName,
+        email: DEMO_COMPANY.email,
+        industry: 'Technology',
+        size: '50-200',
+        location: 'San Francisco, CA',
+        hqLocation: 'San Francisco, CA',
+        foundedYear: 2016,
+        website: 'https://acmecorp.com',
+        linkedin: 'https://linkedin.com/company/acmecorp',
+        description: 'Acme Corp builds innovative software solutions and cloud platforms used by top enterprises worldwide.',
+        culture: 'Fast-paced, highly collaborative engineering culture with weekly tech talks.',
+        perks: ['Health insurance', 'Stock options', 'Remote work', 'Learning budget', 'Free lunch'],
+        logoUrl: pick(COMPANY_LOGO_URLS),
+        bannerUrl: pick(COMPANY_BANNER_URLS),
+        photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
+        isProfileComplete: true,
+        signupStep: 3,
+        contactPerson: DEMO_COMPANY.name,
+        designation: 'HR Manager',
+        companyEmailDomain: 'acmecorp.com',
+        isVerified: true,
+        domainVerified: true,
+        isActive: true,
+        profileViews: 450,
+      }
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  )
+  console.log('   Created/updated company profile')
 
   // ── Create additional companies for variety ─────────────────────────────
   const extraCompanies = []
   for (const c of COMPANIES) {
-    if (c.name === 'Acme Corp') continue // already created
-    let comp = await Company.findOne({ name: c.name })
-    if (!comp) {
-      const user = await User.create({
-        name: c.name,
-        email: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`,
+    if (c.name === 'Acme Corp') continue
+    const email = `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`
+    let user = await User.findOne({ email })
+    if (!user) {
+      user = await User.create({
+        name: c.contactPerson || c.name,
+        email,
         password: 'company@123',
         role: 'company',
         isEmailVerified: true,
@@ -426,21 +443,40 @@ async function run() {
         profilePhoto: pick(USER_AVATAR_URLS),
         coverUrl: pick(USER_COVER_URLS),
       })
-      comp = await Company.create({
-        user: user._id,
-        name: c.name,
-        email: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`,
-        industry: c.industry,
-        size: c.size,
-        location: c.location,
-        description: `${c.name} is a leading ${c.industry.toLowerCase()} company.`,
-        logoUrl: pick(COMPANY_LOGO_URLS),
-        bannerUrl: pick(COMPANY_BANNER_URLS),
-        photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
-        isVerified: true,
-      })
-      console.log(`   Created company: ${c.name}`)
     }
+    let comp = await Company.findOneAndUpdate(
+      { user: user._id },
+      {
+        $set: {
+          name: c.name,
+          email,
+          industry: c.industry,
+          size: c.size,
+          location: c.location,
+          hqLocation: c.location,
+          foundedYear: c.foundedYear || 2018,
+          website: c.website || `https://${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          linkedin: c.linkedin || `https://linkedin.com/company/${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          description: c.description || `${c.name} is a leading ${c.industry.toLowerCase()} company.`,
+          culture: c.culture || 'Innovation-driven culture with flexible working hours.',
+          perks: c.perks || ['Health insurance', 'Remote work', 'Paid time off'],
+          logoUrl: pick(COMPANY_LOGO_URLS),
+          bannerUrl: pick(COMPANY_BANNER_URLS),
+          photos: pickN(COMPANY_PHOTO_URLS, 2, 3),
+          isVerified: true,
+          domainVerified: true,
+          isProfileComplete: true,
+          isActive: true,
+          profileViews: 100 + Math.floor(Math.random() * 900),
+          signupStep: 3,
+          contactPerson: c.contactPerson || c.name,
+          designation: c.designation || 'HR Manager',
+          companyEmailDomain: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+    console.log(`   Created/updated company: ${c.name}`)
     extraCompanies.push(comp)
   }
 
@@ -448,47 +484,50 @@ async function run() {
 
   // ── Seed Demo Agency ─────────────────────────────────────────────────
   const agencyUser = await upsertUser(DEMO_AGENCY)
-  let agencyProfile = await Agency.findOne({ user: agencyUser._id })
-  if (!agencyProfile) {
-    agencyProfile = await Agency.create({
-      user: agencyUser._id,
-      agencyName: DEMO_AGENCY.agencyName,
-      description: 'Creative Cuts Studio is a Mumbai-based video editing & animation agency. We produce high-quality content for YouTube creators, brands, and media houses.',
-      website: 'https://creativecutsstudio.com',
-      city: 'Mumbai, India',
-      logoUrl: AGENCY_LOGO_URLS[0],
-      coverBanner: pick(AGENCY_BANNER_URLS),
-      services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'],
-      teamSize: '6-10',
-      portfolioUrl: 'https://creativecutsstudio.com/portfolio',
-      instagram: 'https://instagram.com/creativecutsstudio',
-      linkedin: 'https://linkedin.com/company/creativecutsstudio',
-      foundedYear: 2021,
-      isRegistered: true,
-      isProfileComplete: true,
-      signupStep: 2,
-      isVerified: true,
-      portfolio: [
-        {
-          title: 'Brand Video Campaign',
-          description: 'High-quality brand videos for tech startups',
-          imageUrl: pick(PORTFOLIO_IMAGE_URLS),
-          category: 'Video Editing',
-        }
-      ]
-    })
-    console.log('   Created agency profile: Creative Cuts Studio')
-  }
+  agencyProfile = await Agency.findOneAndUpdate(
+    { user: agencyUser._id },
+    {
+      $set: {
+        agencyName: DEMO_AGENCY.agencyName,
+        description: 'Creative Cuts Studio is a Mumbai-based video editing & animation agency. We produce high-quality content for YouTube creators, brands, and media houses.',
+        website: 'https://creativecutsstudio.com',
+        city: 'Mumbai, India',
+        logoUrl: AGENCY_LOGO_URLS[0],
+        coverBanner: pick(AGENCY_BANNER_URLS),
+        services: ['Video Editing', 'Photo Editing/Photography', 'Animation/VFX'],
+        teamSize: '6-10',
+        portfolioUrl: 'https://creativecutsstudio.com/portfolio',
+        instagram: 'https://instagram.com/creativecutsstudio',
+        linkedin: 'https://linkedin.com/company/creativecutsstudio',
+        foundedYear: 2021,
+        isRegistered: true,
+        isProfileComplete: true,
+        signupStep: 2,
+        isVerified: true,
+        portfolio: [
+          {
+            title: 'Brand Video Campaign',
+            description: 'High-quality brand videos for tech startups',
+            imageUrl: pick(PORTFOLIO_IMAGE_URLS),
+            category: 'Video Editing',
+          }
+        ]
+      }
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  )
+  console.log('   Created/updated agency profile: Creative Cuts Studio')
 
   // ── Create additional agencies ─────────────────────────────────────────
   const extraAgencies = []
   for (const a of AGENCIES) {
     if (a.name === 'Creative Cuts Studio') continue
-    let ag = await Agency.findOne({ agencyName: a.name })
-    if (!ag) {
-      const u = await User.create({
+    const email = `${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`
+    let u = await User.findOne({ email })
+    if (!u) {
+      u = await User.create({
         name: a.name,
-        email: `${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`,
+        email,
         password: 'agency@123',
         role: 'agency',
         isEmailVerified: true,
@@ -496,31 +535,50 @@ async function run() {
         profilePhoto: pick(USER_AVATAR_URLS),
         coverUrl: pick(USER_COVER_URLS),
       })
-      ag = await Agency.create({
-        user: u._id,
-        agencyName: a.name,
-        description: `${a.name} is a ${a.services.slice(0, 2).join(' & ')} agency serving clients worldwide.`,
-        city: a.city,
-        logoUrl: pick(AGENCY_LOGO_URLS),
-        coverBanner: pick(AGENCY_BANNER_URLS),
-        services: a.services,
-        teamSize: a.teamSize,
-        portfolioUrl: `https://${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/portfolio`,
-        instagram: `https://instagram.com/${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-        portfolio: [
-          {
-            title: `${a.name} Sample Work`,
-            description: `Creative work showcase by ${a.name}`,
-            imageUrl: pick(PORTFOLIO_IMAGE_URLS),
-            category: a.services[0],
-          }
-        ],
-        isRegistered: true,
-        isProfileComplete: true,
-        signupStep: 2,
-      })
-      console.log(`   Created agency: ${a.name}`)
     }
+    let ag = await Agency.findOneAndUpdate(
+      { user: u._id },
+      {
+        $set: {
+          agencyName: a.name,
+          description: a.description || `${a.name} is a ${a.services.slice(0, 2).join(' & ')} agency serving clients worldwide.`,
+          city: a.city,
+          website: a.website || `https://${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          foundedYear: a.foundedYear || 2021,
+          linkedin: a.linkedin || `https://linkedin.com/company/${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          logoUrl: pick(AGENCY_LOGO_URLS),
+          coverBanner: pick(AGENCY_BANNER_URLS),
+          services: a.services,
+          teamSize: a.teamSize,
+          portfolioUrl: `https://${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/portfolio`,
+          instagram: `https://instagram.com/${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          portfolio: [
+            {
+              title: `${a.services[0]} Showcase`,
+              description: `Professional ${a.services[0].toLowerCase()} work delivered for top clients`,
+              imageUrl: pick(PORTFOLIO_IMAGE_URLS),
+              category: a.services[0],
+              link: a.website || 'https://example.com',
+            },
+            {
+              title: `${a.services[1] || 'Creative'} Portfolio`,
+              description: `High-quality ${a.services[1] || 'design'} projects by ${a.name}`,
+              imageUrl: pick(PORTFOLIO_IMAGE_URLS),
+              category: a.services[1] || a.services[0],
+              link: a.website || 'https://example.com',
+            },
+          ],
+          isRegistered: true,
+          isProfileComplete: true,
+          isActive: true,
+          profileViews: 100 + Math.floor(Math.random() * 500),
+          signupStep: 2,
+          isVerified: true,
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+    console.log(`   Created/updated agency: ${a.name}`)
     extraAgencies.push(ag)
   }
 
@@ -825,46 +883,45 @@ async function run() {
         coverUrl: pick(USER_COVER_URLS),
       })
     }
-    let profile = await StudentProfile.findOne({ user: user._id })
-    if (!profile) {
-      await StudentProfile.create({
-        user: user._id,
-        firstName: s.firstName,
-        lastName: s.lastName,
-        headline: s.headline,
-        college: s.college,
-        degree: s.degree,
-        year: s.year,
-        currentLocation: s.location,
-        openTo: s.openTo,
-        relocate: s.relocate,
-        noticePeriod: s.noticePeriod,
-        expectedCTC: s.expectedCTC,
-        openToWork: true,
-        hideFromCurrentEmployer: false,
-        lastActive: new Date(Date.now() - Math.random() * 7 * 86400000),
-        skills: s.skills,
-        resumeUrl: s.resumeUrl,
-        bio: s.bio,
-        experience: s.experience || [],
-        education: s.education || [],
-        projects: [{ title: `${s.firstName}'s Project`, description: 'A project built during college', techStack: s.skills.slice(0, 3), githubLink: s.github ? `${s.github}/project` : undefined }],
-        certifications: [{ name: 'Professional Certification', issuingBody: 'Coursera', date: new Date('2024-06-15') }],
-        languages: [{ language: 'English', proficiency: 'Professional' }, { language: 'Hindi', proficiency: 'Native' }],
-        jobPreferences: { preferredLocations: [s.location, 'Remote'], preferredRoles: [s.headline.split('|')[0].trim()], preferredCompanyType: pick(['startup', 'mnc', 'both']) },
-        github: s.github,
-        linkedin: s.linkedin,
-        portfolio: s.portfolio,
-        contactRevealedTo: [],
-        blockedCompanies: [],
-      })
-      console.log(`   Created O2W profile: ${s.firstName} ${s.lastName}`)
-      o2wCount++
-    } else {
-      await StudentProfile.findByIdAndUpdate(profile._id, { openToWork: true, lastActive: new Date() })
-    }
+    await StudentProfile.findOneAndUpdate(
+      { user: user._id },
+      {
+        $set: {
+          firstName: s.firstName,
+          lastName: s.lastName,
+          headline: s.headline,
+          college: s.college,
+          degree: s.degree,
+          year: s.year,
+          currentLocation: s.location,
+          openTo: s.openTo,
+          relocate: s.relocate,
+          noticePeriod: s.noticePeriod,
+          expectedCTC: s.expectedCTC,
+          openToWork: true,
+          hideFromCurrentEmployer: false,
+          lastActive: new Date(Date.now() - Math.random() * 7 * 86400000),
+          skills: s.skills,
+          resumeUrl: s.resumeUrl,
+          bio: s.bio,
+          experience: s.experience || [],
+          education: s.education || [],
+          projects: [{ title: `${s.firstName}'s Project`, description: 'A project built during college', techStack: s.skills.slice(0, 3), githubLink: s.github ? `${s.github}/project` : undefined }],
+          certifications: [{ name: 'Professional Certification', issuingBody: 'Coursera', date: new Date('2024-06-15') }],
+          languages: [{ language: 'English', proficiency: 'Professional' }, { language: 'Hindi', proficiency: 'Native' }],
+          jobPreferences: { preferredLocations: [s.location, 'Remote'], preferredRoles: [s.headline.split('|')[0].trim()], preferredCompanyType: pick(['startup', 'mnc', 'both']) },
+          github: s.github,
+          linkedin: s.linkedin,
+          portfolio: s.portfolio,
+          contactRevealedTo: [],
+          blockedCompanies: [],
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+    console.log(`   Created/updated O2W profile: ${s.firstName} ${s.lastName}`)
+    o2wCount++
   }
-  if (o2wCount === 0) console.log('   All O2W profiles already exist')
 
   // ── Summary ─────────────────────────────────────────────────────────────
   const totalInternships = await Internship.countDocuments()
@@ -880,10 +937,32 @@ async function run() {
   console.log(`  Internships: ${totalInternships}`)
   console.log(`  Jobs:        ${totalJobs}`)
   console.log('')
-  console.log(`  Admin:   ${DEMO_ADMIN.email} / ${DEMO_ADMIN.password}`)
-  console.log(`  Student: ${DEMO_STUDENT.email} / ${DEMO_STUDENT.password}`)
-  console.log(`  Company: ${DEMO_COMPANY.email} / ${DEMO_COMPANY.password}`)
-  console.log(`  Agency:  ${DEMO_AGENCY.email} / ${DEMO_AGENCY.password}`)
+  console.log('── All Login Credentials ─────────────────────────────')
+  console.log('  🔧 Admin:')
+  console.log(`     admin@demo.com / admin@123`)
+  console.log('')
+  console.log('  🧑‍🎓 Students (password: student@123):')
+  console.log('     student@demo.com (Demo Student)')
+  for (const s of O2W_STUDENTS) {
+    const email = `${s.firstName.toLowerCase()}.${s.lastName.toLowerCase()}@demo.com`
+    console.log(`     ${email} (${s.firstName} ${s.lastName})`)
+  }
+  console.log('')
+  console.log('  🏢 Companies (password: company@123):')
+  console.log('     company@demo.com (Acme Corp)')
+  for (const c of COMPANIES) {
+    if (c.name === 'Acme Corp') continue
+    const email = `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`
+    console.log(`     ${email} (${c.name})`)
+  }
+  console.log('')
+  console.log('  🤝 Agencies (password: agency@123):')
+  console.log('     agency@demo.com (Creative Cuts Studio)')
+  for (const a of AGENCIES) {
+    if (a.name === 'Creative Cuts Studio') continue
+    const email = `${a.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`
+    console.log(`     ${email} (${a.name})`)
+  }
   console.log('──────────────────────────────────────────────────────\n')
 
   await mongoose.disconnect()

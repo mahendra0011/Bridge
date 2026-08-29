@@ -1,8 +1,9 @@
 const router = require('express').Router()
+const path = require('path')
 const axios = require('axios')
 const { protect, restrictTo } = require('../middleware/auth')
 const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
-const { uploadResume, getFileUrl, uploadApplyFiles } = require('../middleware/upload')
+const { uploadResume, getFileUrl, uploadApplyFiles, uploadDocument } = require('../middleware/upload')
 const StudentProfile = require('../models/StudentProfile')
 const Application = require('../models/Application')
 const CandidateInvite = require('../models/CandidateInvite')
@@ -457,46 +458,7 @@ router.post('/conversations/direct', protect, async (req, res) => {
     }
 
     // Require valid relationship: student must have applied to company's posting or been invited
-    let hasRelationship = false
-    if (applicationId) {
-      const app = await Application.findById(applicationId)
-      if (!app || String(app.applicant) !== String(req.user._id)) {
-        return res.status(403).json({ message: 'Invalid application for this student' })
-      }
-      // Check that the application's posting belongs to the target company
-      const postingBelongsToCompany = await Job.findById(app.posting).then(j => j && String(j.company) === String(userId))
-        || await Internship.findById(app.posting).then(i => i && String(i.company) === String(userId))
-        || await Opportunity.findById(app.posting).then(o => o && String(o.poster) === String(userId))
-      if (!postingBelongsToCompany) {
-        return res.status(403).json({ message: 'You can only message companies you have applied to' })
-      }
-      hasRelationship = true
-    } else if (postingId) {
-      const posting = await Job.findById(postingId) || await Internship.findById(postingId) || await Opportunity.findById(postingId)
-      if (!posting) {
-        return res.status(403).json({ message: 'Invalid posting' })
-      }
-      const postingCompanyId = posting.company || posting.poster
-      if (String(postingCompanyId) !== String(userId)) {
-        return res.status(403).json({ message: 'You can only message about postings from this company' })
-      }
-      hasRelationship = true
-    } else {
-      // Check application or invite
-      const hasApplication = await Application.findOne({
-        applicant: req.user._id,
-        $or: [{ job: { $in: await Job.find({ company: userId }).select('_id') } },
-              { internship: { $in: await Internship.find({ company: userId }).select('_id') } },
-              { posting: { $in: await Opportunity.find({ poster: userId }).select('_id') }}],
-      })
-      const hasInvite = await CandidateInvite.findOne({ company: userId, candidate: req.user._id })
-
-      hasRelationship = !!(hasApplication || hasInvite)
-    }
-
-    if (!hasRelationship) {
-      return res.status(403).json({ message: 'You can only message companies you have applied to or been invited by' })
-    }
+    // Allow direct messaging with any user/company/agency (no application restriction)
 
     // Check if conversation already exists between these two users
     let conv = await Conversation.findOne({
@@ -632,7 +594,7 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
     if (conv.status === 'blocked') return res.status(403).json({ message: 'Conversation is blocked' })
 
-    const { text, attachments } = req.body
+    const { text, attachments, replyTo } = req.body
     if (!text?.trim() && (!attachments || attachments.length === 0)) {
       return res.status(400).json({ message: 'Message text or attachment required' })
     }
@@ -649,6 +611,7 @@ router.post('/conversations/:id/messages', protect, async (req, res) => {
       attachments: attachments || [],
       redFlagged: redFlagReasons.length > 0,
       redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
+      replyTo: replyTo || undefined,
     })
 
     conv.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')
@@ -1325,6 +1288,138 @@ router.post('/tickets/:id/reply', async (req, res) => {
     await ticket.save()
     res.json({ ticket })
   } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// ─── RESUME BUILDER ──────────────────────────────────────────────────────────
+
+const Resume = require('../models/Resume')
+
+// GET /api/student/resume-builder — list all resumes for user
+router.get('/resume-builder', async (req, res) => {
+  try {
+    const resumes = await Resume.find({ user: req.user._id }).sort('-updatedAt').select('title updatedAt _id')
+    res.json({ resumes })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// GET /api/student/resume-builder/:id — get single resume
+router.get('/resume-builder/:id', async (req, res) => {
+  try {
+    const resume = await Resume.findOne({ _id: req.params.id, user: req.user._id })
+    if (!resume) return res.status(404).json({ message: 'Resume not found' })
+    res.json({ resume })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// POST /api/student/resume-builder — create or save resume (upsert)
+router.post('/resume-builder', async (req, res) => {
+  try {
+    const { resumeId, title, sections, visibleSections, sectionOrder, settings } = req.body
+    if (resumeId) {
+      const resume = await Resume.findOneAndUpdate(
+        { _id: resumeId, user: req.user._id },
+        { $set: { title, sections, visibleSections, sectionOrder, settings } },
+        { new: true }
+      )
+      if (!resume) return res.status(404).json({ message: 'Resume not found' })
+      return res.json({ resume })
+    }
+    const resume = await Resume.create({
+      user: req.user._id,
+      title: title || 'My Resume',
+      sections: sections || [],
+      visibleSections: visibleSections || ['personal', 'education'],
+      sectionOrder: sectionOrder || [],
+      settings: settings || {},
+    })
+    res.status(201).json({ resume })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// POST /api/student/resume-builder/:id/duplicate — duplicate a resume
+router.post('/resume-builder/:id/duplicate', async (req, res) => {
+  try {
+    const original = await Resume.findOne({ _id: req.params.id, user: req.user._id })
+    if (!original) return res.status(404).json({ message: 'Resume not found' })
+    const copy = await Resume.create({
+      user: req.user._id,
+      title: `${original.title} (Copy)`,
+      sections: original.sections,
+      visibleSections: original.visibleSections,
+      sectionOrder: original.sectionOrder,
+      settings: original.settings,
+    })
+    res.status(201).json({ resume: copy })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// DELETE /api/student/resume-builder/:id
+router.delete('/resume-builder/:id', async (req, res) => {
+  try {
+    const resume = await Resume.findOneAndDelete({ _id: req.params.id, user: req.user._id })
+    if (!resume) return res.status(404).json({ message: 'Resume not found' })
+    res.json({ message: 'Resume deleted' })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// POST /api/student/resume-builder/export — generate LaTeX / PDF export data
+router.post('/resume-builder/export', async (req, res) => {
+  try {
+    const { resumeId, format } = req.body
+    const resume = await Resume.findOne({ _id: resumeId, user: req.user._id })
+    if (!resume) return res.status(404).json({ message: 'Resume not found' })
+    res.json({ resume, format: format || 'latex' })
+  } catch (err) { res.status(500).json({ message: err.message }) }
+})
+
+// POST /api/student/resume-builder/compile-pdf — compile LaTeX to PDF on server
+const { execFile } = require('child_process')
+const fsp = require('fs/promises')
+const os = require('os')
+const crypto = require('crypto')
+
+router.post('/resume-builder/compile-pdf', async (req, res) => {
+  const { latex } = req.body || {}
+  if (!latex || typeof latex !== 'string') {
+    return res.status(400).json({ message: 'Request body must include a "latex" string.' })
+  }
+  if (Buffer.byteLength(latex, 'utf8') > 200 * 1024) {
+    return res.status(413).json({ message: 'LaTeX source is larger than expected.' })
+  }
+
+  const jobId = crypto.randomBytes(8).toString('hex')
+  const workDir = path.join(os.tmpdir(), `resume-build-${jobId}`)
+
+  try {
+    await fsp.mkdir(workDir, { recursive: true })
+    await fsp.writeFile(path.join(workDir, 'resume.tex'), latex, 'utf8')
+
+    const compile = () => new Promise((resolve, reject) => {
+      execFile('pdflatex', ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', 'resume.tex'], { cwd: workDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
+        if (error) {
+          const err = new Error('pdflatex exited with an error')
+          const lines = (stdout || '').split('\n')
+          const errIdx = lines.findIndex(l => l.startsWith('!'))
+          err.log = errIdx === -1 ? lines.slice(-20).join('\n') : lines.slice(errIdx, errIdx + 15).join('\n')
+          reject(err)
+          return
+        }
+        resolve()
+      })
+    })
+
+    await compile()
+    await compile() // second pass for cross-references
+
+    const pdfBuffer = await fsp.readFile(path.join(workDir, 'resume.pdf'))
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"')
+    res.send(pdfBuffer)
+  } catch (err) {
+    res.status(422).json({ message: 'Could not compile PDF.', log: err.log || err.message })
+  } finally {
+    fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
+  }
 })
 
 module.exports = router

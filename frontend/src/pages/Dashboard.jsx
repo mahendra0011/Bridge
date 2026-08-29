@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   FileCheck, Send, Calendar, Bookmark, Award, TrendingUp,
   Clock, ChevronRight, Sparkles, Target, Briefcase, Star,
-  Bell, ArrowUpRight, CheckCircle2, User, Eye, Search
+  Bell, ArrowUpRight, CheckCircle2, User, Eye, Search, FileText
 } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api } from '@/lib/api'
@@ -309,18 +309,28 @@ export default function Dashboard() {
               <h2 className="text-base font-extrabold text-foreground">Quick Actions</h2>
             </div>
             <div className="space-y-2">
-              <Link
-                to="/profile"
-                className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
-              >
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-110">
-                  <User className="size-4 text-primary" />
-                </span>
-                <span className="flex-1">Update Profile</span>
-                <ArrowUpRight className="size-4 text-slate-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
-              </Link>
-              <Link
-                to="/saved"
+<Link
+                 to="/profile"
+                 className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
+               >
+                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-110">
+                   <User className="size-4 text-primary" />
+                 </span>
+                 <span className="flex-1">Update Profile</span>
+                 <ArrowUpRight className="size-4 text-slate-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+               </Link>
+               <Link
+                 to="/dashboard/resume-builder"
+                 className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
+               >
+                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-110">
+                   <FileText className="size-4 text-indigo-500" />
+                 </span>
+                 <span className="flex-1">Resume Builder</span>
+                 <ArrowUpRight className="size-4 text-slate-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+               </Link>
+               <Link
+                 to="/saved"
                 className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
               >
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-110">

@@ -77,21 +77,6 @@ function getUserRole(agency, userId) {
   return member?.role || null
 }
 
-function checkAgencyPermission(...permissions) {
-  return async (req, res, next) => {
-    const agency = await getOwnAgency(req.user._id)
-    if (!agency) return res.status(404).json({ message: 'Agency not found' })
-    const role = getUserRole(agency, req.user._id)
-    if (!role) return res.status(403).json({ message: 'You are not a member of this agency' })
-    const has = permissions.some(p => AGENCY_PERMISSIONS[role]?.includes(p))
-    if (!has) {
-      return res.status(403).json({ message: `Access denied. Your role (${role}) cannot perform this action` })
-    }
-    req.agency = agency
-    next()
-  }
-}
-
 // ─── Helper: check & increment monthly post limit for unregistered agencies ──
 async function checkPostLimit(agency) {
   if (agency.isRegistered) return null
@@ -831,7 +816,7 @@ router.get('/analytics', protect, restrictTo('agency'), async (req, res) => {
 })
 
 // ─── Messages: Start direct conversation ───────────────────────────────────
-router.post('/conversations/direct', checkAgencyPermission('send_messages'), async (req, res) => {
+router.post('/conversations/direct', protect, restrictTo('agency'), async (req, res) => {
   try {
     const { userId } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
@@ -847,17 +832,7 @@ router.post('/conversations/direct', checkAgencyPermission('send_messages'), asy
       return res.status(403).json({ message: 'Unable to start conversation' })
     }
 
-    // Require valid relationship: student applied to agency's posting
-    const hasApplication = await Application.findOne({
-      applicant: userId,
-      $or: [{ posting: { $in: await Job.find({ $or: [{ agency: agency._id }, { company: agency._id }] }).select('_id') } },
-            { posting: { $in: await Internship.find({ $or: [{ agency: agency._id }, { company: agency._id }] }).select('_id') } },
-            { posting: { $in: await Opportunity.find({ poster: { $in: await User.find({ companyId: agency._id }).select('_id') } }).select('_id') }}],
-    })
-
-    if (!hasApplication) {
-      return res.status(403).json({ message: 'You can only message students who have applied to your postings' })
-    }
+    // Allow direct messaging with any candidate/user
 
     // Find existing conversation or create new one
     let conv = await Conversation.findOne({
@@ -896,7 +871,7 @@ router.post('/conversations/direct', checkAgencyPermission('send_messages'), asy
 })
 
 // ─── Messages: Get conversations ───────────────────────────────────────────
-router.get('/conversations', checkAgencyPermission('view_messages'), async (req, res) => {
+router.get('/conversations', protect, restrictTo('agency'), async (req, res) => {
   try {
     const conversations = await Conversation.find({ participants: req.user._id })
       .populate('participants', 'name email')
@@ -938,7 +913,7 @@ router.get('/conversations', checkAgencyPermission('view_messages'), async (req,
 })
 
 // ─── Messages: Get single conversation messages ────────────────────────────
-router.get('/conversations/:id/messages', checkAgencyPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:id/messages', protect, restrictTo('agency'), async (req, res) => {
    try {
       const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
       if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -977,9 +952,9 @@ router.get('/conversations/:id/messages', checkAgencyPermission('view_messages')
 })
 
 // ─── Messages: Send a message ──────────────────────────────────────────────
-router.post('/conversations/:id/messages', checkAgencyPermission('send_messages'), async (req, res) => {
+router.post('/conversations/:id/messages', protect, restrictTo('agency'), async (req, res) => {
   try {
-    const { text, attachments } = req.body
+    const { text, attachments, replyTo } = req.body
     if (!text?.trim() && (!attachments || attachments.length === 0)) {
       return res.status(400).json({ message: 'Message content or attachment required' })
     }
@@ -1007,6 +982,7 @@ router.post('/conversations/:id/messages', checkAgencyPermission('send_messages'
       attachments: attachments || [],
       redFlagged: redFlagReasons.length > 0,
       redFlagReasons: redFlagReasons.length > 0 ? redFlagReasons : undefined,
+      replyTo: replyTo || undefined,
     })
 
     conversation.lastMessage = text?.trim() || (attachments?.[0]?.name || 'Sent a file')
@@ -1034,7 +1010,7 @@ router.post('/conversations/:id/messages', checkAgencyPermission('send_messages'
             title: 'New Message',
             message: `${req.user.name} sent you a message`,
             icon: '💬',
-            link: `/dashboard/messages/${conversation._id}`,
+            link: `/agency/messages/${conversation._id}`,
           })
           notifyViaEmailIfOffline(io, pId, req.user.name, conversation._id)
         }
@@ -1048,7 +1024,7 @@ router.post('/conversations/:id/messages', checkAgencyPermission('send_messages'
 })
 
 // ─── Messages: Mark conversation as read ───────────────────────────────────
-router.post('/conversations/:id/read', checkAgencyPermission('view_messages'), async (req, res) => {
+router.post('/conversations/:id/read', protect, restrictTo('agency'), async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
     if (!conv) return res.status(404).json({ message: 'Conversation not found' })
@@ -1073,13 +1049,13 @@ router.post('/conversations/:id/read', checkAgencyPermission('view_messages'), a
 })
 
 const { reactToMessage, editMessage, deleteMessage, pinMessage } = require('../controllers/messageActions')
-router.post('/conversations/:id/messages/:msgId/react', checkAgencyPermission('send_messages'), reactToMessage)
-router.patch('/conversations/:id/messages/:msgId', checkAgencyPermission('send_messages'), editMessage)
-router.delete('/conversations/:id/messages/:msgId', checkAgencyPermission('send_messages'), deleteMessage)
-router.patch('/conversations/:id/messages/:msgId/pin', checkAgencyPermission('send_messages'), pinMessage)
+router.post('/conversations/:id/messages/:msgId/react', protect, restrictTo('agency'), reactToMessage)
+router.patch('/conversations/:id/messages/:msgId', protect, restrictTo('agency'), editMessage)
+router.delete('/conversations/:id/messages/:msgId', protect, restrictTo('agency'), deleteMessage)
+router.patch('/conversations/:id/messages/:msgId/pin', protect, restrictTo('agency'), pinMessage)
 
 // POST /api/agency/conversations/attachments - Upload for chat (no profile docs pollution)
-router.post('/conversations/attachments', checkAgencyPermission('send_messages'), (req, res) => {
+router.post('/conversations/attachments', protect, restrictTo('agency'), (req, res) => {
    uploadDocument(req, res, async (err) => {
      if (err) return res.status(400).json({ message: err.message })
      const fileUrl = getFileUrl(req, 'documents')
@@ -1284,7 +1260,7 @@ router.post('/conversations/:id/block', protect, restrictTo('agency'), async (re
 })
 
 // GET /api/agency/conversations/:id - Fetch single conversation (for email deep-links)
-router.get('/conversations/:id', checkAgencyPermission('view_messages'), async (req, res) => {
+router.get('/conversations/:id', protect, restrictTo('agency'), async (req, res) => {
   try {
     const conv = await Conversation.findOne({ _id: req.params.id, participants: req.user._id })
       .populate('participants', 'name email role')

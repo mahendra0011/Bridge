@@ -10,6 +10,10 @@ async function reactToMessage(req, res) {
     const msg = await Message.findById(msgId)
     if (!msg) return res.status(404).json({ message: 'Message not found' })
 
+    const conv = await Conversation.findById(msg.conversation)
+    const isParticipant = conv?.participants?.some(p => String(p) === String(req.user._id))
+    if (!isParticipant) return res.status(403).json({ message: 'Unauthorized' })
+
     const existingIndex = msg.reactions.findIndex(
       (r) => String(r.user) === String(req.user._id) && r.emoji === emoji
     )
@@ -25,9 +29,8 @@ async function reactToMessage(req, res) {
     const populated = await Message.findById(msg._id).populate('sender', 'name email role').populate('reactions.user', 'name')
 
     const io = req.app.get('io')
-    if (io) {
-      const conv = await Conversation.findById(msg.conversation)
-      conv?.participants?.forEach((pId) => {
+    if (io && conv) {
+      conv.participants.forEach((pId) => {
         io.to(`user:${pId}`).emit('message:updated', {
           messageId: msg._id,
           updates: { reactions: populated.reactions },
@@ -109,15 +112,18 @@ async function pinMessage(req, res) {
     const msg = await Message.findById(msgId)
     if (!msg) return res.status(404).json({ message: 'Message not found' })
 
+    const conv = await Conversation.findById(msg.conversation)
+    const isParticipant = conv?.participants?.some(p => String(p) === String(req.user._id))
+    if (!isParticipant) return res.status(403).json({ message: 'Unauthorized' })
+
     msg.isPinned = !msg.isPinned
     await msg.save()
 
     const populated = await Message.findById(msg._id).populate('sender', 'name email role')
 
     const io = req.app.get('io')
-    if (io) {
-      const conv = await Conversation.findById(msg.conversation)
-      conv?.participants?.forEach((pId) => {
+    if (io && conv) {
+      conv.participants.forEach((pId) => {
         io.to(`user:${pId}`).emit('message:updated', {
           messageId: msg._id,
           updates: { isPinned: msg.isPinned },

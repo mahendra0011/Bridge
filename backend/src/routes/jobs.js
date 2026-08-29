@@ -159,7 +159,7 @@ router.post('/', protect, restrictTo('company', 'agency'), postingValidators, va
       return res.status(201).json({ job })
     }
 
-    const company = await Company.findById(req.user.profileId)
+     const company = await Company.findOne({ user: req.user._id })
     if (!company) return res.status(404).json({ message: 'Company not found' })
     if (!canPost(company, req.user._id)) {
       return res.status(403).json({ message: 'No permission to post jobs' })

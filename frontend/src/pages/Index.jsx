@@ -571,6 +571,7 @@ export default function Index() {
   const featured = featuredJobs
   const featuredLoading = false
   const lenisRef = useRef(null)
+  const [searchQuery, setSearchQuery] = useState({ role: '', location: '', type: '' })
   
   // Refs for scroll animations
   const heroRef = useRef(null)
@@ -700,48 +701,60 @@ export default function Index() {
           >
             <div className="w-full flex-1 border-b border-slate-100 px-4 py-3 md:border-b-0 md:border-r">
               <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">What role?</div>
-              <input
-                type="text"
-                placeholder="Product Design, Backend..."
-                className="w-full text-sm font-medium outline-none placeholder:text-slate-300"
-              />
+<input
+                 type="text"
+                 placeholder="Product Design, Backend..."
+                 value={searchQuery.role}
+                 onChange={e => setSearchQuery(q => ({ ...q, role: e.target.value }))}
+                 className="w-full text-sm font-medium outline-none placeholder:text-slate-300"
+               />
             </div>
             <div className="w-full flex-1 border-b border-slate-100 px-4 py-3 md:border-b-0 md:border-r">
               <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Where?</div>
-              <input
-                type="text"
-                placeholder="Remote, NYC, London..."
-                className="w-full text-sm font-medium outline-none placeholder:text-slate-300"
-              />
+<input
+                 type="text"
+                 placeholder="Remote, NYC, London..."
+                 value={searchQuery.location}
+                 onChange={e => setSearchQuery(q => ({ ...q, location: e.target.value }))}
+                 className="w-full text-sm font-medium outline-none placeholder:text-slate-300"
+               />
             </div>
             <div className="w-full flex-1 px-4 py-3">
               <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Job Type</div>
-              <select className="w-full bg-transparent text-sm font-medium outline-none">
-                <option>Any</option>
-                <option>Internship</option>
-                <option>Full-time</option>
-                <option>Contract</option>
+              <select 
+                value={searchQuery.type}
+                onChange={e => setSearchQuery(q => ({ ...q, type: e.target.value }))}
+                className="w-full bg-transparent text-sm font-medium outline-none">
+                <option value="">Any</option>
+                <option value="internship">Internship</option>
+                <option value="job">Full-time</option>
+                <option value="contract">Contract</option>
               </select>
             </div>
-            <Link to="/jobs" className="w-full md:w-auto">
-              <Button size="lg" className="w-full rounded-xl bg-primary px-8 py-6 font-bold text-primary-foreground hover:bg-primary/90 md:w-auto">
-                <Search className="size-4" /> Find Roles
-              </Button>
-            </Link>
+<Link 
+               to={searchQuery.type === 'internship' 
+                 ? `/internships?query=${encodeURIComponent(searchQuery.role)}&location=${encodeURIComponent(searchQuery.location)}`
+                 : `/jobs?query=${encodeURIComponent(searchQuery.role)}&location=${encodeURIComponent(searchQuery.location)}`}
+               className="w-full md:w-auto"
+             >
+               <Button size="lg" className="w-full rounded-xl bg-primary px-8 py-6 font-bold text-primary-foreground hover:bg-primary/90 md:w-auto">
+                 <Search className="size-4" /> Find Roles
+               </Button>
+             </Link>
           </motion.div>
 
           {/* Quick chips */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs">
             <span className="font-semibold text-slate-500">Popular:</span>
-            {['Frontend Intern', 'Product Design', 'Data Science', 'Marketing', 'Remote'].map((c) => (
-              <Link
-                key={c}
-                to="/jobs"
-                className="rounded-full border border-slate-200 bg-white px-4 py-1.5 font-semibold text-slate-600 transition-colors hover:border-primary hover:text-primary"
-              >
-                {c}
-              </Link>
-            ))}
+{['Frontend Intern', 'Product Design', 'Data Science', 'Marketing', 'Remote'].map((c) => (
+               <Link
+                 key={c}
+                 to={`/jobs?query=${encodeURIComponent(c)}`}
+                 className="rounded-full border border-slate-200 bg-white px-4 py-1.5 font-semibold text-slate-600 transition-colors hover:border-primary hover:text-primary"
+               >
+                 {c}
+               </Link>
+             ))}
           </div>
 
           {/* Stats strip */}

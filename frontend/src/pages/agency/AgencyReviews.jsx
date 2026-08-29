@@ -96,13 +96,18 @@ export default function AgencyReviews() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-        <div>
-          <h2 className="text-2xl font-extrabold tracking-tight">Reviews</h2>
-          <p className="mt-1 text-sm text-slate-500">See what clients say about your agency. Reviews build trust.</p>
+        <div className="flex items-center gap-3">
+          <div className="grid size-11 place-items-center rounded-xl bg-primary/10">
+            <Star className="size-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold sm:text-3xl">Reviews</h1>
+            <p className="mt-1 text-sm text-slate-500">See what clients say about your agency. Reviews build trust.</p>
+          </div>
         </div>
 
         {/* Review Stats Summary */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-8">
             <div className="text-center">
               <div className="text-5xl font-extrabold text-foreground">{stats.average.toFixed(1)}</div>
@@ -136,7 +141,7 @@ export default function AgencyReviews() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search reviews..."
-              className="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm outline-none focus:border-primary" />
+              className="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
           </div>
           <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
             {['all', '5', '4', '3', '2', '1'].map(f => (
@@ -154,10 +159,12 @@ export default function AgencyReviews() {
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-slate-100" />)}
           </div>
         ) : filteredReviews.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-16 text-center text-slate-400">
-            <Star className="mx-auto mb-3 size-10 text-slate-300" />
+          <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center shadow-sm">
+            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-amber-50">
+              <Star className="size-7 text-amber-400" />
+            </div>
             <p className="font-semibold text-slate-600">No reviews yet</p>
-            <p className="mt-1 text-sm">Reviews from clients will appear here. Encourage your clients to leave feedback.</p>
+            <p className="mt-1 text-sm text-slate-400">Reviews from clients will appear here. Encourage your clients to leave feedback.</p>
           </div>
         ) : (
           <div className="space-y-3">

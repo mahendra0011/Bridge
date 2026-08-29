@@ -1,5 +1,7 @@
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider } from 'react-redux'
+import { FileText } from 'lucide-react'
+import ResumeBuilder from '@/pages/dashboard/ResumeBuilder'
 import { store } from '@/store'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/context/AuthContext'
@@ -93,6 +95,8 @@ import Tickets from '@/pages/Tickets'
 import AgencyDashboard from '@/pages/agency/AgencyDashboard'
 import AgencyTeamMembers from '@/pages/agency/AgencyTeamMembers'
 import AgencyPostings from '@/pages/agency/AgencyPostings'
+import AgencyPost from '@/pages/agency/AgencyPost'
+import AgencyPostGig from '@/pages/agency/AgencyPostGig'
 import AgencyPipeline from '@/pages/agency/AgencyPipeline'
 import AgencyProfile from '@/pages/agency/AgencyProfile'
 import AgencyVerification from '@/pages/agency/AgencyVerification'
@@ -165,63 +169,80 @@ export default function App() {
             <Route path="/company/signup" element={<CompanySignup />} />
             <Route path="/agency/signup" element={<AgencySignup />} />
             <Route path="/agency/dashboard" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyDashboard />
               </ProtectedRoute>
             } />
             <Route path="/agency/team" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyTeamMembers />
               </ProtectedRoute>
             } />
+            <Route path="/agency/post" element={<Navigate to="/agency/post-gig" replace />} />
+            <Route path="/agency/post-listing" element={<Navigate to="/agency/post-gig" replace />} />
             <Route path="/agency/postings" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyPostings />
               </ProtectedRoute>
             } />
+            <Route path="/agency/post-gig" element={
+              <ProtectedRoute>
+                <AgencyPostGig />
+              </ProtectedRoute>
+            } />
+            <Route path="/agency/posting/edit/:id" element={
+              <ProtectedRoute>
+                <AgencyPostGig />
+              </ProtectedRoute>
+            } />
             <Route path="/agency/pipeline" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyPipeline />
               </ProtectedRoute>
             } />
             <Route path="/agency/profile" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyProfile />
               </ProtectedRoute>
             } />
             <Route path="/agency/verification" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyVerification />
               </ProtectedRoute>
             } />
             <Route path="/agency/messages" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyMessages />
               </ProtectedRoute>
             } />
             <Route path="/agency/messages/:convId" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyMessages />
               </ProtectedRoute>
             } />
             <Route path="/agency/analytics" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/agency/reviews" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencyDashboardReviews />
               </ProtectedRoute>
             } />
             <Route path="/agency/settings" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencySettings />
               </ProtectedRoute>
             } />
             <Route path="/agency/support" element={
-              <ProtectedRoute roles={['agency']}>
+              <ProtectedRoute>
                 <AgencySupport />
+              </ProtectedRoute>
+            } />
+            <Route path="/agency/post-gig" element={
+              <ProtectedRoute>
+                <AgencyPostGig />
               </ProtectedRoute>
             } />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -359,28 +380,33 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/resume-builder"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <ResumeBuilder />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Company */}
             <Route
               path="/company"
               element={
-                <ProtectedRoute roles={['company']}>
+                <ProtectedRoute>
                   <CompanyDashboard />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/company/profile"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyProfile />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/company/profile" element={
+              <ProtectedRoute>
+                <CompanyProfile />
+              </ProtectedRoute>
+            } />
             <Route
               path="/company/post-internship"
               element={
-                <ProtectedRoute roles={['company', 'agency']}>
+                <ProtectedRoute>
                   <PostInternship />
                 </ProtectedRoute>
               }
@@ -388,7 +414,7 @@ export default function App() {
             <Route
               path="/company/post-job"
               element={
-                <ProtectedRoute roles={['company', 'agency']}>
+                <ProtectedRoute>
                   <PostJob />
                 </ProtectedRoute>
               }
@@ -396,36 +422,27 @@ export default function App() {
             <Route
               path="/company/edit-posting/:kind/:id"
               element={
-                <ProtectedRoute roles={['company', 'agency']}>
+                <ProtectedRoute>
                   <EditPosting />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/company/applicants/:kind/:id"
-              element={
-                <ProtectedRoute roles={['company', 'agency']}>
-                  <Applicants />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/company/applicants/:kind/:id" element={
+              <ProtectedRoute>
+                <Applicants />
+              </ProtectedRoute>
+            } />
 
-            <Route
-              path="/tickets"
-              element={
-                <ProtectedRoute roles={['student', 'company']}>
-                  <Tickets />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/tickets"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Tickets />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/tickets" element={
+              <ProtectedRoute>
+                <Tickets />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/tickets" element={
+              <ProtectedRoute>
+                <Tickets />
+              </ProtectedRoute>
+            } />
 
             {/* Open to Work — Browse candidates (public) */}
             <Route path="/open-to-work" element={<OpenToWorkBrowse />} />
@@ -449,176 +466,116 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/company/candidates/invite/:userId"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <InviteToApply />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/company/candidates/invite/:userId" element={
+              <ProtectedRoute>
+                <InviteToApply />
+              </ProtectedRoute>
+            } />
 
             {/* Company Dashboard Sections */}
-            <Route
-              path="/company/postings"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyPostings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/feedback/:appId"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <InterviewFeedback />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/listings"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyPostings />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/company/postings" element={
+              <ProtectedRoute>
+                <CompanyPostings />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/feedback/:appId" element={
+              <ProtectedRoute>
+                <InterviewFeedback />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/listings" element={
+              <ProtectedRoute>
+                <CompanyPostings />
+              </ProtectedRoute>
+            } />
             <Route
               path="/company/post"
               element={
-                <ProtectedRoute roles={['company', 'agency']}>
+                <ProtectedRoute>
                   <Post />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/company/listings/new"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Post />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/pipeline"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Pipeline />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/pipeline/:kind/:id"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Pipeline />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/scheduling"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Scheduling />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/team"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <TeamMembers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/messages"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyMessages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/messages/:convId"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyMessages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/chat"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyMessages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/analytics"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyAnalytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/notifications"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyNotifications />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/verification"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyVerification />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/interviews"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <Scheduling />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/reviews"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyDashboardReviews />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/settings"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanySettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/settings/billing"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanyBilling />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/company/support"
-              element={
-                <ProtectedRoute roles={['company']}>
-                  <CompanySupport />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/company/listings/new" element={
+              <ProtectedRoute>
+                <Post />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/pipeline" element={
+              <ProtectedRoute>
+                <Pipeline />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/pipeline/:kind/:id" element={
+              <ProtectedRoute>
+                <Pipeline />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/scheduling" element={
+              <ProtectedRoute>
+                <Scheduling />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/team" element={
+              <ProtectedRoute>
+                <TeamMembers />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/messages" element={
+              <ProtectedRoute>
+                <CompanyMessages />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/messages/:convId" element={
+              <ProtectedRoute>
+                <CompanyMessages />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/chat" element={
+              <ProtectedRoute>
+                <CompanyMessages />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/analytics" element={
+              <ProtectedRoute>
+                <CompanyAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/notifications" element={
+              <ProtectedRoute>
+                <CompanyNotifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/verification" element={
+              <ProtectedRoute>
+                <CompanyVerification />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/interviews" element={
+              <ProtectedRoute>
+                <Scheduling />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/reviews" element={
+              <ProtectedRoute>
+                <CompanyDashboardReviews />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/settings" element={
+              <ProtectedRoute>
+                <CompanySettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/settings/billing" element={
+              <ProtectedRoute>
+                <CompanyBilling />
+              </ProtectedRoute>
+            } />
+            <Route path="/company/support" element={
+              <ProtectedRoute>
+                <CompanySupport />
+              </ProtectedRoute>
+            } />
 
             {/* Admin */}
             <Route

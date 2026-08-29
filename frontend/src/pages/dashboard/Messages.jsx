@@ -71,7 +71,8 @@ const messagesEndRef = useRef(null)
    const typingTimeoutRef = useRef(null)
    const fileInputRef = useRef(null)
    const messagesContainerRef = useRef(null)
-   const [page, setPage] = useState(1)
+   const { convId } = useParams()
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [msgSearchQuery, setMsgSearchQuery] = useState('')
@@ -88,6 +89,7 @@ const messagesEndRef = useRef(null)
       if (convId && String(data.conversation || data._id?.conversation) === convId) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === data._id)) return prev
+          if (String(data.sender?._id || data.sender) === String(user?._id)) return prev
           return [...prev, data]
         })
       }
@@ -98,7 +100,7 @@ const messagesEndRef = useRef(null)
             : c
         )
       )
-    }, []),
+    }, [user?._id]),
     'message:updated': useCallback((data) => {
       setMessages((prev) =>
         prev.map((m) => (m._id === data.messageId ? { ...m, ...data.updates } : m))
@@ -172,7 +174,6 @@ const messagesEndRef = useRef(null)
 
    // Handle deep-link to conversation from URL param or ?userId=X
    useEffect(() => {
-     const convId = useParams().convId
      const userId = searchParams.get('userId')
 
      if (!user) return
@@ -205,7 +206,7 @@ const messagesEndRef = useRef(null)
         setSearchParams({}, { replace: true })
       })
       .catch((err) => { toast.error(err.message || 'Could not start conversation'); setSearchParams({}, { replace: true }) })
-   }, [searchParams, user, setSearchParams, conversations])
+   }, [convId, searchParams, user, setSearchParams, conversations])
 
   useEffect(() => {
     activeIdRef.current = activeConv?._id || null

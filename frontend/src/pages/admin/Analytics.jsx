@@ -1,70 +1,38 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, TrendingUp, BarChart2, Building2, Award, Download } from 'lucide-react'
+import {
+  ArrowLeft, TrendingUp, BarChart2, Building2, Award, Download,
+  Users, FileText
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { api, BASE_URL } from '@/lib/api'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
-function BarChart({ data, color = '#6366f1', label }) {
-  if (!data || data.length === 0) {
-    return <div className="flex h-40 items-center justify-center text-sm text-slate-400">No data yet</div>
-  }
-  const max = Math.max(...data.map(d => d.count), 1)
-  const W = 560, H = 140, PAD = 8, BAR_GAP = 2
-  const barW = Math.max(3, (W - PAD * 2) / data.length - BAR_GAP)
-  const step = Math.ceil(data.length / 7)
-
+function StatCard({ icon, label, value, color }) {
   return (
-    <div>
-      <p className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full overflow-visible">
-        {data.map((d, i) => {
-          const barH = Math.max(3, (d.count / max) * (H - 20))
-          const x = PAD + i * (barW + BAR_GAP)
-          const y = H - 16 - barH
-          return (
-            <g key={d.date} className="group">
-              <rect x={x} y={y} width={barW} height={barH} rx={2} fill={color} opacity="0.85" className="transition-opacity hover:opacity-100" />
-              <title>{`${d.date}: ${d.count}`}</title>
-              {i % step === 0 && (
-                <text x={x + barW / 2} y={H - 2} textAnchor="middle" fontSize="8" fill="#94a3b8">{d.date?.slice(5)}</text>
-              )}
-            </g>
-          )
-        })}
-      </svg>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-3">
+        <div className={`grid size-10 place-items-center rounded-xl ${color}`}>
+          {icon}
+        </div>
+        <div>
+          <div className="text-2xl font-extrabold">{value}</div>
+          <div className="text-sm text-slate-500">{label}</div>
+        </div>
+      </div>
     </div>
   )
 }
 
-function HorizontalBars({ items, nameKey, valueKey, color = '#6366f1' }) {
-  if (!items || items.length === 0) {
-    return <div className="flex h-20 items-center justify-center text-sm text-slate-400">No data yet</div>
-  }
-  const max = Math.max(...items.map(d => d[valueKey]), 1)
+function ChartCard({ title, icon: Icon, children, gradient }) {
   return (
-    <ul className="space-y-3">
-      {items.map((d, i) => (
-        <li key={i} className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-slate-700 truncate max-w-[60%]">{d[nameKey]}</span>
-            <span className="text-slate-500 text-xs font-semibold">{d[valueKey]}</span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-100">
-            <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${(d[valueKey] / max) * 100}%`, backgroundColor: color }} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function ChartCard({ title, icon: Icon, children }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex items-center gap-2 mb-4">
-        {Icon && <Icon className="size-4 text-slate-500" />}
-        <h3 className="text-sm font-bold text-foreground">{title}</h3>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className={`grid size-8 place-items-center rounded-lg bg-gradient-to-br ${gradient || 'from-indigo-500 to-purple-600'}`}>
+          <Icon className="size-4 text-white" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-800">{title}</h3>
       </div>
       {children}
     </div>
@@ -100,48 +68,100 @@ export default function AdminAnalytics() {
     return () => { cancelled = true }
   }, [])
 
+  const stats = analytics ? {
+    totalUsers: analytics.totalUsers || 0,
+    totalCompanies: analytics.totalCompanies || 0,
+    totalApplications: analytics.totalApplications || 0,
+    totalPostings: analytics.totalPostings || 0,
+  } : { totalUsers: '—', totalCompanies: '—', totalApplications: '—', totalPostings: '—' }
+
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-primary">
           <ArrowLeft className="size-4" /> Back to Admin Dashboard
         </Link>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Analytics</h2>
-            <p className="mt-1 text-sm text-slate-500">Platform-wide analytics and insights.</p>
+
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-xl bg-primary/10">
+              <BarChart2 className="size-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold sm:text-3xl">Analytics</h1>
+              <p className="text-sm text-slate-500 mt-0.5">Platform-wide metrics and insights.</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2">
             <button onClick={() => handleExport('csv')} disabled={exporting}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-colors">
-              <Download className="size-3.5" /> {exporting ? '...' : 'CSV'}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:border-primary transition-colors">
+              <Download className="size-4" /> CSV
             </button>
             <button onClick={() => handleExport('pdf')} disabled={exporting}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-colors">
-              <Download className="size-3.5" /> {exporting ? '...' : 'PDF'}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:border-primary transition-colors">
+              <Download className="size-4" /> PDF
             </button>
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard icon={<Users className="size-5" />} label="Total Users" value={stats.totalUsers} color="bg-blue-50 text-blue-600" />
+          <StatCard icon={<Building2 className="size-5" />} label="Companies" value={stats.totalCompanies} color="bg-violet-50 text-violet-600" />
+          <StatCard icon={<FileText className="size-5" />} label="Applications" value={stats.totalApplications} color="bg-emerald-50 text-emerald-600" />
+          <StatCard icon={<Award className="size-5" />} label="Postings" value={stats.totalPostings} color="bg-amber-50 text-amber-600" />
         </div>
 
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {[1, 2, 3, 4].map(n => (
-              <div key={n} className="h-44 animate-pulse rounded-2xl bg-slate-100" />
+              <div key={n} className="h-64 animate-pulse rounded-2xl bg-slate-100" />
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <ChartCard title="Signups Per Day (Last 30 Days)" icon={TrendingUp}>
-              <BarChart data={analytics?.signupsPerDay ?? []} color="#6366f1" label="New users" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <ChartCard title="Signups Per Day (Last 30 Days)" icon={TrendingUp} gradient="from-blue-500 to-cyan-500">
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={analytics?.signupsPerDay ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
+                  <Tooltip contentStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartCard>
-            <ChartCard title="Applications Per Day (Last 30 Days)" icon={BarChart2}>
-              <BarChart data={analytics?.applicationsPerDay ?? []} color="#10b981" label="Applications submitted" />
+            <ChartCard title="Applications Per Day (Last 30 Days)" icon={BarChart2} gradient="from-emerald-500 to-teal-500">
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={analytics?.applicationsPerDay ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
+                  <Tooltip contentStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartCard>
-            <ChartCard title="Top Companies by Applications" icon={Building2}>
-              <HorizontalBars items={analytics?.topCompanies ?? []} nameKey="name" valueKey="applications" color="#8b5cf6" />
+            <ChartCard title="Top Companies by Applications" icon={Building2} gradient="from-violet-500 to-purple-500">
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={analytics?.topCompanies?.slice(0, 5) ?? []} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={80} />
+                  <Tooltip contentStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="applications" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartCard>
-            <ChartCard title="Most Sought-After Skills" icon={Award}>
-              <HorizontalBars items={analytics?.popularSkills ?? []} nameKey="skill" valueKey="count" color="#f59e0b" />
+            <ChartCard title="Most Sought-After Skills" icon={Award} gradient="from-amber-500 to-orange-500">
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={analytics?.popularSkills?.slice(0, 5) ?? []} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
+                  <YAxis type="category" dataKey="skill" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={80} />
+                  <Tooltip contentStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="count" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartCard>
           </div>
         )}

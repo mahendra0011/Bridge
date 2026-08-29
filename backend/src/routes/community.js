@@ -7,6 +7,10 @@ const Notification = require('../models/Notification')
 const { protect } = require('../middleware/auth')
 const { uploadCommunityMedia, getFileUrl } = require('../middleware/upload')
 
+function getFileUrlForArray(req, folder, files) {
+  return files.map(f => f.path || `/uploads/${folder}/${f.filename}`)
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SUSPICIOUS_KEYWORDS = [
   'registration fee', 'processing charge', 'pay to apply', 'application fee',
@@ -59,9 +63,10 @@ router.post('/upload-media', protect, (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' })
     }
-    const files = req.files.map(f => ({
+    const urls = getFileUrlForArray(req, 'community', req.files)
+    const files = req.files.map((f, idx) => ({
       type: f.mimetype.startsWith('video/') ? 'video' : f.mimetype === 'application/pdf' ? 'pdf' : 'image',
-      url: getFileUrl(req, 'community') || `/uploads/community/${f.filename}`,
+      url: urls[idx],
       filename: f.originalname,
       size: f.size,
     }))
@@ -321,9 +326,10 @@ router.post('/posts', protect, (req, res) => {
 
       let media = []
       if (req.files && req.files.length > 0) {
-        media = req.files.map(f => ({
+        const urls = getFileUrlForArray(req, 'community', req.files)
+        media = req.files.map((f, idx) => ({
           type: f.mimetype.startsWith('video/') ? 'video' : f.mimetype === 'application/pdf' ? 'pdf' : 'image',
-          url: getFileUrl(req, 'community') || `/uploads/community/${f.filename}`,
+          url: urls[idx],
           filename: f.originalname,
           size: f.size,
         }))
@@ -435,9 +441,10 @@ router.put('/posts/:id', protect, (req, res) => {
       }
 
       if (req.files && req.files.length > 0) {
-        const newMedia = req.files.map(f => ({
+        const urls = getFileUrlForArray(req, 'community', req.files)
+        const newMedia = req.files.map((f, idx) => ({
           type: f.mimetype.startsWith('video/') ? 'video' : f.mimetype === 'application/pdf' ? 'pdf' : 'image',
-          url: getFileUrl(req, 'community') || `/uploads/community/${f.filename}`,
+          url: urls[idx],
           filename: f.originalname,
           size: f.size,
         }))

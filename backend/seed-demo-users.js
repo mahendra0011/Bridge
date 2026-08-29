@@ -59,11 +59,47 @@ async function seedDemoUsers() {
         isEmailVerified: true,
         isPhoneVerified: true,
       })
-      await StudentProfile.create({ user: studentUser._id })
       console.log('✅ Created student user: student@demo.com / student@123')
     } else {
       console.log('ℹ️  Found existing student user')
     }
+    await StudentProfile.findOneAndUpdate(
+      { user: studentUser._id },
+      {
+        $set: {
+          user: studentUser._id,
+          firstName: 'Demo',
+          lastName: 'Student',
+          phone: '9876543210',
+          bio: 'A passionate computer science student looking for internship and job opportunities in software development.',
+          college: 'Indian Institute of Technology, Bombay',
+          degree: 'B.Tech',
+          year: 'Final Year',
+          cgpa: '8.5',
+          skills: ['JavaScript', 'React', 'Node.js', 'Python', 'MongoDB', 'TypeScript', 'AWS'],
+          headline: 'Full Stack Developer | Open for opportunities',
+          currentLocation: 'Mumbai, India',
+          openToWork: true,
+          openTo: 'both',
+          relocate: true,
+          lastActive: new Date(),
+          experience: [{ company: 'TechNova', role: 'Frontend Intern', duration: '6 months', current: true }],
+          education: [{ degree: 'B.Tech Computer Science', institution: 'IIT Bombay', year: '2026' }],
+          projects: [{ title: 'E-Commerce Platform', description: 'Built a full-stack e-commerce platform using React and Node.js', techStack: ['React', 'Node.js', 'MongoDB'], link: 'https://github.com/demo/ecommerce' }],
+          certifications: [{ name: 'AWS Cloud Practitioner', issuer: 'Amazon', date: '2024-01' }],
+          achievements: [{ title: 'Hackathon Winner', description: 'Won first place at TechHack 2024' }],
+          languages: [{ name: 'English', proficiency: 'Fluent' }, { name: 'Hindi', proficiency: 'Native' }],
+          jobPreferences: { preferredLocations: ['Mumbai', 'Remote'], preferredRoles: ['Frontend Developer', 'Full Stack Developer'], preferredCompanyType: 'Startup' },
+          github: 'https://github.com/demo-student',
+          linkedin: 'https://linkedin.com/in/demo-student',
+          portfolio: 'https://demo-student.dev',
+          isPhoneVerified: true,
+          isIdVerified: true,
+        }
+      },
+      { upsert: true, new: true }
+    )
+    console.log('✅ StudentProfile upserted with full details')
 
     // Demo Company
     let companyUser = await User.findOne({ email: 'company@demo.com' })
@@ -79,6 +115,44 @@ async function seedDemoUsers() {
     } else {
       console.log('ℹ️  Found existing company user')
     }
+    await Company.findOneAndUpdate(
+      { user: companyUser._id },
+      {
+        $set: {
+          user: companyUser._id,
+          name: 'Demo Company',
+          industry: 'Technology',
+          size: '201-500',
+          foundedYear: 2016,
+          hqLocation: 'Bangalore, India',
+          location: 'Bangalore, India',
+          website: 'https://democompany.com',
+          linkedin: 'https://linkedin.com/company/democompany',
+          description: 'Demo Company is a leading technology solutions provider specializing in web development, mobile apps, and cloud infrastructure serving 500+ enterprise clients.',
+          culture: 'Collaborative engineering culture with weekly tech talks, open-source contributions, and a strong mentorship programme.',
+          perks: ['Health insurance', 'Stock options', 'Remote work', 'Learning budget', 'Free lunch', 'Gym membership'],
+          companyEmailDomain: 'democompany.com',
+          domainVerified: true,
+          isVerified: true,
+          likelyVerified: true,
+          isProfileComplete: true,
+          signupStep: 4,
+          contactPerson: 'HR Manager',
+          designation: 'HR Manager',
+          isActive: true,
+          profileViews: 500,
+          logoUrl: 'https://images.unsplash.com/photo-1576091160399-1e6e4c37548e?w=150&h=150&fit=crop&q=80',
+          bannerUrl: 'https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80',
+          photos: [
+            'https://images.unsplash.com/photo-1556756901-49a78f90b8d1?w=600&h=400&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1542744095-fcf47d8b5318?w=600&h=400&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1517245386807-bb43f82c8e29?w=600&h=400&fit=crop&q=80',
+          ],
+        }
+      },
+      { upsert: true, new: true }
+    )
+    console.log('✅ Company profile upserted with full details')
 
     // Demo Agency - with logo and portfolio (Cloudinary URLs)
     let agencyUser = await User.findOne({ email: 'agency@demo.com' })
@@ -90,42 +164,54 @@ async function seedDemoUsers() {
         role: 'agency',
         isEmailVerified: true,
       })
-      const agency = await Agency.create({
-        user: agencyUser._id,
-        agencyName: 'Demo Talent Agency',
-        description: 'Leading recruitment agency specializing in tech talent placement across India. We connect top companies with exceptional candidates.',
-        website: 'https://demoTalentAgency.com',
-        city: 'Mumbai',
-        logoUrl: CLOUDINARY_AGENCY_LOGO,
-        foundedYear: 2015,
-        teamSize: '11-25',
-        services: ['Recruitment', 'HR Consulting', 'Talent Acquisition'],
-        portfolioUrl: 'https://behance.net/demo-agency',
-        instagram: '@demoTalentAgency',
-        isProfileComplete: true,
-        signupStep: 2,
-        isActive: true,
-        portfolio: [
-          {
-            title: 'Tech Hiring Campaign',
-            description: 'Successfully placed 50+ developers at top tech companies',
-            imageUrl: CLOUDINARY_PORTFOLIO_TECH,
-            category: 'Recruitment',
-            link: 'https://demoTalentAgency.com/case-studies/tech-hiring'
-          },
-          {
-            title: 'HR Consulting Project',
-            description: 'Improved HR processes for mid-size companies',
-            imageUrl: CLOUDINARY_PORTFOLIO_HR,
-            category: 'HR Consulting',
-          }
-        ]
-      })
       console.log('✅ Created agency user: agency@demo.com / agency@123')
-      console.log('✅ Agency created with Cloudinary logo and portfolio')
     } else {
       console.log('ℹ️  Found existing agency user')
     }
+    await Agency.findOneAndUpdate(
+      { user: agencyUser._id },
+      {
+        $set: {
+          user: agencyUser._id,
+          agencyName: 'Demo Talent Agency',
+          description: 'Leading recruitment agency specializing in tech talent placement across India. We connect top companies with exceptional candidates and have placed 500+ professionals.',
+          website: 'https://demoTalentAgency.com',
+          city: 'Mumbai',
+          logoUrl: CLOUDINARY_AGENCY_LOGO,
+          coverBanner: 'https://images.unsplash.com/photo-1576091160554-b32a31c4952d?w=1920&h=400&fit=crop&q=80',
+          foundedYear: 2015,
+          teamSize: '11-25',
+          services: ['Recruitment', 'HR Consulting', 'Talent Acquisition'],
+          portfolioUrl: 'https://behance.net/demo-agency',
+          instagram: '@demoTalentAgency',
+          linkedin: 'https://linkedin.com/company/demotalentagency',
+          isProfileComplete: true,
+          signupStep: 2,
+          isActive: true,
+          isVerified: true,
+          isRegistered: true,
+          profileViews: 350,
+          portfolio: [
+            {
+              title: 'Tech Hiring Campaign',
+              description: 'Successfully placed 50+ developers at top tech companies',
+              imageUrl: CLOUDINARY_PORTFOLIO_TECH,
+              category: 'Recruitment',
+              link: 'https://demoTalentAgency.com/case-studies/tech-hiring'
+            },
+            {
+              title: 'HR Consulting Project',
+              description: 'Improved HR processes for mid-size companies reducing attrition by 30%',
+              imageUrl: CLOUDINARY_PORTFOLIO_HR,
+              category: 'HR Consulting',
+              link: 'https://demoTalentAgency.com/case-studies/hr-consulting'
+            }
+          ]
+        }
+      },
+      { upsert: true, new: true }
+    )
+    console.log('✅ Agency profile upserted with full details')
 
     console.log('\n✅ Demo users seed completed!')
     console.log('Login with:')

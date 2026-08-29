@@ -74,10 +74,15 @@ export default function AgencySupport() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Help & Support</h2>
-            <p className="mt-1 text-sm text-slate-500">FAQs, support tickets, and ways to reach us.</p>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-11 place-items-center rounded-xl bg-primary/10">
+              <HelpCircle className="size-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold sm:text-3xl">Help & Support</h1>
+              <p className="mt-1 text-sm text-slate-500">FAQs, support tickets, and ways to reach us.</p>
+            </div>
           </div>
           <button onClick={() => setShowTicketForm(true)}
             className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90">
@@ -90,13 +95,14 @@ export default function AgencySupport() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search FAQs or help topics..."
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm outline-none focus:border-primary" />
+            className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
         </div>
 
         {/* FAQ Section */}
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="font-bold">Frequently Asked Questions</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+            <HelpCircle className="size-4 text-primary" />
+            <h3 className="font-bold text-slate-800">Frequently Asked Questions</h3>
           </div>
           <div className="divide-y divide-slate-100">
             {filteredFaqs.length === 0 ? (
@@ -119,9 +125,10 @@ export default function AgencySupport() {
         </div>
 
         {/* Support Tickets */}
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="font-bold">Your Support Tickets</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+            <FileText className="size-4 text-primary" />
+            <h3 className="font-bold text-slate-800">Your Support Tickets</h3>
           </div>
           {loading ? (
             <div className="space-y-2 p-4">
@@ -156,8 +163,13 @@ export default function AgencySupport() {
         </div>
 
         {/* Contact Info */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h3 className="font-bold mb-4">Still need help?</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid size-8 place-items-center rounded-lg bg-primary/10">
+              <Phone className="size-4 text-primary" />
+            </div>
+            <h3 className="font-bold text-slate-800">Still need help?</h3>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <a href="mailto:support@bridge.com" className="flex items-center gap-3 rounded-xl bg-slate-50 p-4 hover:bg-primary/5 transition-colors">
               <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -200,18 +212,18 @@ export default function AgencySupport() {
                   <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Subject</label>
                   <input value={ticketForm.subject} onChange={e => setTicketForm(p => ({ ...p, subject: e.target.value }))}
                     placeholder="Brief title for your issue"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Description</label>
                   <textarea value={ticketForm.description} onChange={e => setTicketForm(p => ({ ...p, description: e.target.value }))}
                     rows={4} placeholder="Describe your issue in detail..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Priority</label>
                   <select value={ticketForm.priority} onChange={e => setTicketForm(p => ({ ...p, priority: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary">
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
