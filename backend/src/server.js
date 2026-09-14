@@ -173,7 +173,14 @@ app.set('io', io)
 
 ;(async () => {
   try {
-    const resolvedUri = await resolveMongoUri(process.env.MONGO_URI || 'mongodb://localhost:27017/bridge')
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI
+    if (!mongoUri && isProduction) {
+      console.error('❌ FATAL: MONGO_URI / MONGODB_URI is not set in Render Environment Variables!')
+      console.error('👉 Go to Render Dashboard -> bridge-backend -> Environment -> Add MONGO_URI')
+      process.exit(1)
+    }
+
+    const resolvedUri = await resolveMongoUri(mongoUri || 'mongodb://localhost:27017/bridge')
     await mongoose.connect(resolvedUri)
     console.log('MongoDB connected')
 
