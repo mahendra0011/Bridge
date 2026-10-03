@@ -1405,50 +1405,71 @@ router.post('/resume-builder/compile-pdf', async (req, res) => {
     return res.status(413).json({ message: 'Resume payload is too large to render.' })
   }
 
-  // ── Path 2: LaTeX compile (only when explicitly requested and available) ──
+  // ── Path 2: real LaTeX compile (same behaviour as Overleaf) ──
+  // Overleaf runs pdflatex in nonstop mode and still shows the PDF when there
+  // are non-fatal warnings/errors (e.g. loading both fontawesome and
+  // fontawesome5). So we do NOT use -halt-on-error and we accept the PDF
+  // whenever one was produced, even if pdflatex exited with a non-zero code.
   if (latex && typeof latex === 'string') {
     const workDir = path.join(os.tmpdir(), `resume-build-${crypto.randomBytes(8).toString('hex')}`)
+    let pdflatexMissing = false
+    let lastLog = ''
     try {
       await fsp.mkdir(workDir, { recursive: true })
       await fsp.writeFile(path.join(workDir, 'resume.tex'), latex, 'utf8')
 
-      const compile = () => new Promise((resolve, reject) => {
+      const runPdflatex = () => new Promise((resolve) => {
         execFile(
           'pdflatex',
-          ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', 'resume.tex'],
-          { cwd: workDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 },
+          ['-interaction=nonstopmode', '-no-shell-escape', 'resume.tex'],
+          {
+            cwd: workDir,
+            timeout: 30000,
+            maxBuffer: 10 * 1024 * 1024,
+            // paranoid mode: LaTeX may not read/write files outside the work dir
+            env: { ...process.env, openin_any: 'p', openout_any: 'p' },
+          },
           (error, stdout) => {
-            if (error) {
-              const err = new Error('pdflatex exited with an error')
-              const lines = (stdout || '').split('\n')
-              const errIdx = lines.findIndex(l => l.startsWith('!'))
-              err.log = errIdx === -1
-                ? lines.slice(-20).join('\n')
-                : lines.slice(errIdx, errIdx + 15).join('\n')
-              reject(err)
-              return
-            }
+            if (error && error.code === 'ENOENT') pdflatexMissing = true
+            lastLog = stdout || ''
             resolve()
           }
         )
       })
 
-      await compile()
-      await compile() // second pass for cross-references
+      await runPdflatex()
+      if (!pdflatexMissing) await runPdflatex() // second pass for references / layout
 
-      const pdfBuffer = await fsp.readFile(path.join(workDir, 'resume.pdf'))
-      res.setHeader('Content-Type', 'application/pdf')
-      res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"')
-      return res.send(pdfBuffer)
-    } catch (err) {
-      // pdflatex missing or failed — parse LaTeX into structured sections and fall through to native renderer
-      console.warn('[resume-pdf] LaTeX binary unavailable or error, falling back to parsed native renderer:', err.message)
+      if (!pdflatexMissing) {
+        let pdfBuffer = null
+        try { pdfBuffer = await fsp.readFile(path.join(workDir, 'resume.pdf')) } catch (_) {}
+
+        if (pdfBuffer && pdfBuffer.length > 0) {
+          res.setHeader('Content-Type', 'application/pdf')
+          res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"')
+          return res.send(pdfBuffer)
+        }
+
+        // pdflatex is installed but no PDF came out -> real LaTeX error, show it
+        const lines = lastLog.split('\n')
+        const errIdx = lines.findIndex(l => l.startsWith('!'))
+        const log = errIdx === -1
+          ? lines.slice(-20).join('\n')
+          : lines.slice(errIdx, errIdx + 15).join('\n')
+        return res.status(422).json({ message: 'LaTeX compilation failed.', log })
+      }
+
+      // pdflatex binary not installed on this host -> fall back to parsed native renderer
+      console.warn('[resume-pdf] pdflatex not found on this server, using lossy native renderer')
       if (!sections || sections.length === 0) {
         sections = parseLatexResume(latex)
         if (!visibleSections || visibleSections.length === 0) {
           visibleSections = sections.map(s => s.type)
         }
       }
+    } catch (err) {
+      console.error('[resume-pdf] LaTeX compile error:', err)
+      return res.status(500).json({ message: 'LaTeX compilation failed.', log: err.message })
     } finally {
       fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
     }
