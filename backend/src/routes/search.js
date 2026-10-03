@@ -2,6 +2,7 @@ const router = require('express').Router()
 const Internship = require('../models/Internship')
 const Job = require('../models/Job')
 const Company = require('../models/Company')
+const { atlasSearch } = require('../utils/atlasSearch')
 const { escapeRegex } = require('../utils/sanitize')
 
 // GET /api/search/companies?industry=...&limit=4
@@ -21,6 +22,7 @@ router.get('/companies', async (req, res) => {
 })
 
 // GET /api/search?q=react&limit=5
+// Uses Atlas Search when ATLAS_SEARCH_ENABLED=true, falls back to $regex otherwise
 router.get('/', async (req, res) => {
   try {
     const { q = '', limit = 5 } = req.query
@@ -28,24 +30,35 @@ router.get('/', async (req, res) => {
 
     if (!q.trim()) return res.json({ results: [] })
 
-    const { escapeRegex } = require('../utils/sanitize')
-    const regex = { $regex: escapeRegex(q), $options: 'i' }
-    const status = { status: 'approved' }
+    const [internshipIds, jobIds, companies] = await Promise.all([
+      // Internships — Atlas Search on title + description + category
+      atlasSearch(Internship, q, {
+        paths: ['title', 'description', 'category'],
+        matchFilter: { status: 'approved' },
+        limit: lim,
+      }),
+      // Jobs — Atlas Search on title + description + category
+      atlasSearch(Job, q, {
+        paths: ['title', 'description', 'category'],
+        matchFilter: { status: 'approved' },
+        limit: lim,
+      }),
+      // Companies — Atlas Search on name + industry
+      atlasSearch(Company, q, {
+        paths: ['name', 'industry'],
+        limit: lim,
+      }),
+    ])
 
-    const [internships, jobs, companies] = await Promise.all([
-      Internship.find({ ...status, $or: [{ title: regex }, { description: regex }, { category: regex }] })
+    // Re-populate company for internships & jobs (aggregation skips populate)
+    const [internships, jobs] = await Promise.all([
+      Internship.find({ _id: { $in: internshipIds.map(d => d._id) } })
         .populate('company', 'name logoUrl')
         .select('title location mode company')
-        .limit(lim)
         .lean(),
-      Job.find({ ...status, $or: [{ title: regex }, { description: regex }, { category: regex }] })
+      Job.find({ _id: { $in: jobIds.map(d => d._id) } })
         .populate('company', 'name logoUrl')
         .select('title location mode company')
-        .limit(lim)
-        .lean(),
-      Company.find({ $or: [{ name: regex }, { industry: regex }] })
-        .select('name industry location logoUrl')
-        .limit(lim)
         .lean(),
     ])
 

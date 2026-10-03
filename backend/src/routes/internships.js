@@ -3,6 +3,7 @@ const { body } = require('express-validator')
 const { protect, restrictTo } = require('../middleware/auth')
 const { validate } = require('../middleware/validate')
 const { sanitizeFields, escapeRegex } = require('../utils/sanitize')
+const { atlasSearch } = require('../utils/atlasSearch')
 const { uploadResume, uploadApplyFiles, getFileUrl } = require('../middleware/upload')
 const mongoose = require('mongoose')
 const Internship = require('../models/Internship')
@@ -27,10 +28,15 @@ router.get('/', async (req, res) => {
   try {
     const { query, location, mode, category, minStipend, maxStipend, skills, deadlineBefore, sort, page = 1, limit = 12, featured } = req.query
     const filter = { status: 'approved' }
-    if (query) filter.$or = [
-      { title: { $regex: escapeRegex(query), $options: 'i' } },
-      { description: { $regex: escapeRegex(query), $options: 'i' } }
-    ]
+    if (query) {
+      // Atlas Search: get matching IDs, then remaining filters applied below
+      const matched = await atlasSearch(Internship, query, {
+        paths: ['title', 'description', 'skills', 'category'],
+        matchFilter: { status: 'approved' },
+        limit: 200,
+      })
+      filter._id = { $in: matched.map(d => d._id) }
+    }
     if (location) filter.location = { $regex: escapeRegex(location), $options: 'i' }
     if (mode) filter.mode = mode
     if (category) filter.category = category

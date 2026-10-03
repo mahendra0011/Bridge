@@ -242,7 +242,8 @@ const resumeSchema = new mongoose.Schema({
   visibleSections: [{ type: String }],
   sectionOrder: [{ type: String }],
   settings: {
-    fontFamily: { type: String, default: 'sans-serif' },
+    templateId: { type: String, default: 'classic-professional' },
+    fontFamily: { type: String, default: 'serif' },
     fontSize: { type: String, default: '11pt' },
     paperSize: { type: String, default: 'letterpaper' },
     primaryColor: { type: String, default: '0E5484' },

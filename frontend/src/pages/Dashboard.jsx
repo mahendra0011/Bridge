@@ -320,7 +320,7 @@ export default function Dashboard() {
                  <ArrowUpRight className="size-4 text-slate-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
                </Link>
                <Link
-                 to="/dashboard/resume-builder"
+                 to="/resume-builder"
                  className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-sm"
                >
                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-110">

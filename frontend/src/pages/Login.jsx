@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { SiteLayout } from '@/components/site/site-layout'
@@ -8,6 +8,14 @@ import { api } from '@/lib/api'
 import { Eye, EyeOff, Mail, RotateCcw } from 'lucide-react'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+// Quick-login demo accounts. These are created by `npm run seed:full` in backend/.
+const DEMO_ACCOUNTS = [
+  { icon: '🧑‍🎓', label: 'Student', email: 'student@demo.com', password: 'student@123' },
+  { icon: '🏢', label: 'Company', email: 'company@demo.com', password: 'company@123' },
+  { icon: '🔧', label: 'Admin', email: 'admin@demo.com', password: 'admin@123' },
+  { icon: '🤝', label: 'Agency', email: 'agency@demo.com', password: 'agency@123' },
+]
 
 // Helper to get redirect path from URL query param or React Router state
 function getRedirectPath(search, state) {
@@ -226,14 +234,17 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   // Set when backend says email is unverified
   const [pendingEmail, setPendingEmail] = useState(null)
+  // Ref to the login form so demo buttons can submit it directly instead of
+  // relying on document.querySelector('form'), which can match an unrelated form.
+  const formRef = useRef(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  /** Shared login routine used by both the form submit and the demo quick-login buttons. */
+  const performLogin = async (loginEmail, loginPassword) => {
     setError('')
     setPendingEmail(null)
     setSubmitting(true)
     try {
-      const user = await login(email, password)
+      const user = await login(loginEmail, loginPassword)
       toast.success('Welcome back!')
       const redirectTo = getRedirectPath(location.search, location.state) || roleHome(user.role)
       navigate(redirectTo, { replace: true })
@@ -241,13 +252,25 @@ export default function Login() {
       const data = err.data || {}
       // Case: backend signals needsVerification → show OTP panel inline
       if (err.status === 403 && data.needsVerification) {
-        setPendingEmail(data.pendingEmail || email)
+        setPendingEmail(data.pendingEmail || loginEmail)
       } else {
         setError(err.message || 'Login failed')
       }
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    performLogin(email, password)
+  }
+
+  /** Fill the form with demo credentials and log in immediately. */
+  const handleDemoLogin = (demoEmail, demoPassword) => {
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    performLogin(demoEmail, demoPassword)
   }
 
   // OTP verified via login page — log them in
@@ -271,7 +294,7 @@ export default function Login() {
             </p>
           )}
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <form ref={formRef} className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <Field
               label="Email"
               type="email"
@@ -342,50 +365,17 @@ export default function Login() {
             </div>
           </div>
            <div className="mt-4 grid grid-cols-4 gap-2">
-             <button
-               type="button"
-               onClick={() => {
-                 setEmail('student@demo.com')
-                 setPassword('student@123')
-                 setTimeout(() => document.querySelector('form')?.requestSubmit(), 100)
-               }}
-               className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-             >
-               🧑‍🎓 Student
-             </button>
-             <button
-               type="button"
-               onClick={() => {
-                 setEmail('company@demo.com')
-                 setPassword('company@123')
-                 setTimeout(() => document.querySelector('form')?.requestSubmit(), 100)
-               }}
-               className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-             >
-               🏢 Company
-             </button>
-             <button
-               type="button"
-               onClick={() => {
-                 setEmail('admin@demo.com')
-                 setPassword('admin@123')
-                 setTimeout(() => document.querySelector('form')?.requestSubmit(), 100)
-               }}
-               className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-             >
-               🔧 Admin
-             </button>
-             <button
-               type="button"
-               onClick={() => {
-                 setEmail('agency@demo.com')
-                 setPassword('agency@123')
-                 setTimeout(() => document.querySelector('form')?.requestSubmit(), 100)
-               }}
-               className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-             >
-               🤝 Agency
-             </button>
+             {DEMO_ACCOUNTS.map((acc) => (
+               <button
+                 key={acc.email}
+                 type="button"
+                 disabled={submitting}
+                 onClick={() => handleDemoLogin(acc.email, acc.password)}
+                 className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+               >
+                 {acc.icon} {acc.label}
+               </button>
+             ))}
            </div>
 
           {/* Inline OTP verification panel — only shows when email is unverified */}

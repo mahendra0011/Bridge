@@ -1,5 +1,7 @@
+require('dotenv').config()
 const mongoose = require('mongoose')
 const axios = require('axios')
+const { resolveMongoUri } = require('./src/utils/mongoConnection')
 const Company = require('./src/models/Company')
 const Job = require('./src/models/Job')
 const Internship = require('./src/models/Internship')
@@ -29,11 +31,11 @@ async function fetchExternalCompanyData(domain) {
   }
 }
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
 
 async function seed() {
   try {
-    await mongoose.connect(MONGO_URI)
+    await mongoose.connect(await resolveMongoUri(MONGO_URI))
     console.log('Connected to MongoDB\n')
 
     // ── Find or create a company user ──────────────────────────────────────

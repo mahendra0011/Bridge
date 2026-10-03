@@ -2,6 +2,10 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { FileText } from 'lucide-react'
 import ResumeBuilder from '@/pages/dashboard/ResumeBuilder'
+import ResumeTemplates from '@/pages/ResumeTemplates'
+import ResumeTemplateCreateChoice from '@/pages/dashboard/ResumeTemplateCreateChoice'
+import VisualTemplateBuilder from '@/pages/dashboard/VisualTemplateBuilder'
+import LatexResumeStudio from '@/pages/dashboard/LatexResumeStudio'
 import { store } from '@/store'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/context/AuthContext'
@@ -161,6 +165,11 @@ export default function App() {
             <Route path="/community/tag/:tag" element={<TagHub />} />
             <Route path="/community/company/:companyId" element={<TagHub />} />
             <Route path="/community/hub" element={<ProtectedRoute><CommunityHub /></ProtectedRoute>} />
+            <Route path="/resume-templates" element={<ResumeTemplates />} />
+            <Route path="/resume-templates/create" element={<ResumeTemplateCreateChoice />} />
+            <Route path="/resume-templates/builder" element={<VisualTemplateBuilder />} />
+            <Route path="/resume-templates/latex" element={<LatexResumeStudio />} />
+            <Route path="/resume-builder" element={<ResumeBuilder />} />
 
             {/* Auth */}
             <Route path="/login" element={<Login />} />
@@ -385,6 +394,38 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['student']}>
                   <ResumeBuilder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/resume-templates"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <ResumeTemplates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/resume-templates/create"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <ResumeTemplateCreateChoice />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/resume-templates/builder"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <VisualTemplateBuilder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/resume-templates/latex"
+              element={
+                <ProtectedRoute roles={['student']}>
+                  <LatexResumeStudio />
                 </ProtectedRoute>
               }
             />

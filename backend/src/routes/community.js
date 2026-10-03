@@ -6,6 +6,7 @@ const CommunityAlert = require('../models/CommunityAlert')
 const Notification = require('../models/Notification')
 const { protect } = require('../middleware/auth')
 const { uploadCommunityMedia, getFileUrl } = require('../middleware/upload')
+const { atlasSearch } = require('../utils/atlasSearch')
 
 function getFileUrlForArray(req, folder, files) {
   return files.map(f => f.path || `/uploads/${folder}/${f.filename}`)
@@ -82,12 +83,13 @@ router.get('/posts', async (req, res) => {
     const filter = { status: { $nin: ['deleted', 'flagged', 'draft'] } }
 
     if (query) {
-      filter.$or = [
-        { description: { $regex: query, $options: 'i' } },
-        { companyName: { $regex: query, $options: 'i' } },
-        { roleTitle: { $regex: query, $options: 'i' } },
-        { tags: { $regex: query, $options: 'i' } },
-      ]
+      // Atlas Search on community posts — description, companyName, roleTitle, tags
+      const matched = await atlasSearch(CommunityPost, query, {
+        paths: ['description', 'companyName', 'roleTitle', 'tags'],
+        matchFilter: { status: { $nin: ['deleted', 'flagged', 'draft'] } },
+        limit: 500,
+      })
+      filter._id = { $in: matched.map(d => d._id) }
     }
     if (postType) filter.postType = postType
     if (category) filter.category = category

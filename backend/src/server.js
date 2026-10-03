@@ -165,7 +165,8 @@ app.use('/api/opportunities', csrfProtection, require('./routes/opportunities'))
 app.use('/api/person',       csrfProtection, require('./routes/person'))
 app.use('/api/community',    csrfProtection, require('./routes/community'))
 app.use('/api/reports',      csrfProtection, require('./routes/reports'))
-app.use('/api/contact',      require('./routes/contact')) // Public endpoint, no CSRF needed
+app.use('/api/contact',          require('./routes/contact')) // Public endpoint, no CSRF needed
+app.use('/api/resume-templates', csrfProtection, require('./routes/resumeTemplates'))
 
 // Socket.io
 require('./utils/socket')(io)

@@ -96,17 +96,17 @@ export function GlobalSearch() {
       {/* Trigger button */}
       <button
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-        className="hidden md:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400 hover:border-primary hover:text-slate-600 transition-colors w-48 xl:w-64"
+        className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs xl:text-sm text-slate-400 hover:border-primary hover:text-slate-600 transition-colors w-32 xl:w-48 2xl:w-56 shrink-0 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
       >
         <Search className="size-3.5 shrink-0" />
-        <span className="flex-1 text-left">Search...</span>
-        <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">⌘K</kbd>
+        <span className="flex-1 text-left truncate">Search...</span>
+        <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded bg-slate-200 dark:bg-slate-800 dark:text-slate-400 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">⌘K</kbd>
       </button>
 
       {/* Mobile icon */}
       <button
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50) }}
-        className="grid size-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 md:hidden"
+        className="grid size-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden shrink-0"
         aria-label="Search"
       >
         <Search className="size-4" />

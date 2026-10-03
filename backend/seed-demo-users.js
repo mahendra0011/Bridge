@@ -1,6 +1,8 @@
 // Demo users seed file - creates admin, student, agency, and company demo accounts
+require('dotenv').config()
 const mongoose = require('mongoose')
 const axios = require('axios')
+const { resolveMongoUri } = require('./src/utils/mongoConnection')
 const User = require('./src/models/User')
 const Company = require('./src/models/Company')
 const Agency = require('./src/models/Agency')
@@ -26,11 +28,11 @@ async function fetchDemoAvatar(username) {
   }
 }
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/bridge'
 
 async function seedDemoUsers() {
   try {
-    await mongoose.connect(MONGO_URI)
+    await mongoose.connect(await resolveMongoUri(MONGO_URI))
     console.log('Connected to MongoDB\n')
 
     // Demo Admin

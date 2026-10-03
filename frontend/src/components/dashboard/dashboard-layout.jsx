@@ -33,7 +33,8 @@ sections: [
        { label: 'Community Hub', icon: MessageCircle, to: '/dashboard/community' },
 { label: 'Support Ticket', icon: Ticket, to: '/tickets' },
         { separator: true },
-        { label: 'Resume Builder', icon: FileText, to: '/dashboard/resume-builder' },
+        { label: 'Resume Templates', icon: Sparkles, to: '/resume-templates' },
+        { label: 'Resume Builder', icon: FileText, to: '/resume-builder' },
         { label: 'Setting', icon: Settings, to: '/dashboard/settings' },
      ],
     quickLinks: []

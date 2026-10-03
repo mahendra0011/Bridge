@@ -1372,53 +1372,115 @@ router.post('/resume-builder/export', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }) }
 })
 
-// POST /api/student/resume-builder/compile-pdf — compile LaTeX to PDF on server
+// POST /api/student/resume-builder/compile-pdf — render a resume to PDF.
+//
+// Two rendering paths:
+//   1. Native renderer (default) — builds the PDF with pdfkit directly from the
+//      structured resume data. No external tooling required, so it always works.
+//   2. LaTeX path — used when the caller sends `latex` AND a `pdflatex` binary
+//      is available on PATH. Kept because users may want pixel-perfect
+//      LaTeX output; it is skipped automatically when pdflatex is missing.
 const { execFile } = require('child_process')
 const fsp = require('fs/promises')
 const os = require('os')
 const crypto = require('crypto')
+const { renderResumePdf, renderResumeDocx } = require('../utils/resumePdf')
+const { parseLatexResume } = require('../utils/latexResumeParser')
 
 router.post('/resume-builder/compile-pdf', async (req, res) => {
-  const { latex } = req.body || {}
-  if (!latex || typeof latex !== 'string') {
-    return res.status(400).json({ message: 'Request body must include a "latex" string.' })
-  }
-  if (Buffer.byteLength(latex, 'utf8') > 200 * 1024) {
-    return res.status(413).json({ message: 'LaTeX source is larger than expected.' })
-  }
+  let { latex, sections, visibleSections, sectionOrder, settings, title } = req.body || {}
 
-  const jobId = crypto.randomBytes(8).toString('hex')
-  const workDir = path.join(os.tmpdir(), `resume-build-${jobId}`)
-
-  try {
-    await fsp.mkdir(workDir, { recursive: true })
-    await fsp.writeFile(path.join(workDir, 'resume.tex'), latex, 'utf8')
-
-    const compile = () => new Promise((resolve, reject) => {
-      execFile('pdflatex', ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', 'resume.tex'], { cwd: workDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
-        if (error) {
-          const err = new Error('pdflatex exited with an error')
-          const lines = (stdout || '').split('\n')
-          const errIdx = lines.findIndex(l => l.startsWith('!'))
-          err.log = errIdx === -1 ? lines.slice(-20).join('\n') : lines.slice(errIdx, errIdx + 15).join('\n')
-          reject(err)
-          return
-        }
-        resolve()
-      })
+  const hasStructuredData = Array.isArray(sections) && sections.length > 0
+  if (!hasStructuredData && (!latex || typeof latex !== 'string')) {
+    return res.status(400).json({
+      message: 'Request body must include a "sections" array or a "latex" string.',
     })
+  }
 
-    await compile()
-    await compile() // second pass for cross-references
+  const payloadSize = Buffer.byteLength(
+    typeof latex === 'string' ? latex : JSON.stringify(sections || ''),
+    'utf8'
+  )
+  if (payloadSize > 2 * 1024 * 1024) {
+    return res.status(413).json({ message: 'Resume payload is too large to render.' })
+  }
 
-    const pdfBuffer = await fsp.readFile(path.join(workDir, 'resume.pdf'))
+  // ── Path 2: LaTeX compile (only when explicitly requested and available) ──
+  if (latex && typeof latex === 'string') {
+    const workDir = path.join(os.tmpdir(), `resume-build-${crypto.randomBytes(8).toString('hex')}`)
+    try {
+      await fsp.mkdir(workDir, { recursive: true })
+      await fsp.writeFile(path.join(workDir, 'resume.tex'), latex, 'utf8')
+
+      const compile = () => new Promise((resolve, reject) => {
+        execFile(
+          'pdflatex',
+          ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', 'resume.tex'],
+          { cwd: workDir, timeout: 20000, maxBuffer: 10 * 1024 * 1024 },
+          (error, stdout) => {
+            if (error) {
+              const err = new Error('pdflatex exited with an error')
+              const lines = (stdout || '').split('\n')
+              const errIdx = lines.findIndex(l => l.startsWith('!'))
+              err.log = errIdx === -1
+                ? lines.slice(-20).join('\n')
+                : lines.slice(errIdx, errIdx + 15).join('\n')
+              reject(err)
+              return
+            }
+            resolve()
+          }
+        )
+      })
+
+      await compile()
+      await compile() // second pass for cross-references
+
+      const pdfBuffer = await fsp.readFile(path.join(workDir, 'resume.pdf'))
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"')
+      return res.send(pdfBuffer)
+    } catch (err) {
+      // pdflatex missing or failed — parse LaTeX into structured sections and fall through to native renderer
+      console.warn('[resume-pdf] LaTeX binary unavailable or error, falling back to parsed native renderer:', err.message)
+      if (!sections || sections.length === 0) {
+        sections = parseLatexResume(latex)
+        if (!visibleSections || visibleSections.length === 0) {
+          visibleSections = sections.map(s => s.type)
+        }
+      }
+    } finally {
+      fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
+    }
+  }
+
+  // ── Path 1: native pdfkit renderer ──
+  try {
+    const pdfBuffer = await renderResumePdf({ sections, visibleSections, sectionOrder, settings, title })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"')
     res.send(pdfBuffer)
   } catch (err) {
-    res.status(422).json({ message: 'Could not compile PDF.', log: err.log || err.message })
-  } finally {
-    fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
+    console.error('[resume-pdf] Native render failed:', err)
+    res.status(422).json({ message: 'Could not render PDF.', log: err.message })
+  }
+})
+
+// POST /api/student/resume-builder/export-docx — render a real .docx file
+router.post('/resume-builder/export-docx', async (req, res) => {
+  const { sections, visibleSections, sectionOrder, settings, title } = req.body || {}
+  if (!Array.isArray(sections) || sections.length === 0) {
+    return res.status(400).json({ message: 'Request body must include a non-empty "sections" array.' })
+  }
+  try {
+    const docxBuffer = renderResumeDocx({ sections, visibleSections, sectionOrder, settings, title })
+    const safeTitle = String(title || 'resume').replace(/[^\w\- ]+/g, '').trim() || 'resume'
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.docx"`)
+    res.send(docxBuffer)
+  } catch (err) {
+    console.error('[resume-docx] Render failed:', err)
+    res.status(500).json({ message: 'Could not generate DOCX.', log: err.message })
   }
 })
 
