@@ -271,6 +271,174 @@ export function generateLatexCode(presetKey, data) {
     }
   ]
 
+  // 0. MAHENDRA PRAJAPATI (FOUNDER'S CHOICE / SB2NOV FORMAT)
+  if (presetKey === 'mahendra' || presetKey === 'mahendra-founder') {
+    return `%-------------------------
+% Resume in Latex
+% Author : Abey George
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\\documentclass[letterpaper,11pt]{article}
+
+\\usepackage{latexsym}
+\\usepackage[empty]{fullpage}
+\\usepackage{titlesec}
+\\usepackage{marvosym}
+\\usepackage[usenames,dvipsnames]{xcolor}
+\\usepackage{verbatim}
+\\usepackage{enumitem}
+\\usepackage[hidelinks]{hyperref}
+\\usepackage[english]{babel}
+\\usepackage{tabularx}
+\\usepackage{fontawesome5}
+\\usepackage{multicol}
+\\usepackage{graphicx}
+\\setlength{\\multicolsep}{-3.0pt}
+\\setlength{\\columnsep}{-1pt}
+\\input{glyphtounicode}
+
+\\definecolor{cvblue}{HTML}{0E5484}
+\\definecolor{black}{HTML}{130810}
+\\definecolor{darkcolor}{HTML}{0F4539}
+\\definecolor{cvgreen}{HTML}{3BD80D}
+\\definecolor{taggreen}{HTML}{00E278}
+\\definecolor{SlateGrey}{HTML}{2E2E2E}
+\\definecolor{LightGrey}{HTML}{666666}
+\\colorlet{name}{black}
+\\colorlet{tagline}{darkcolor}
+\\colorlet{heading}{darkcolor}
+\\colorlet{headingrule}{cvblue}
+\\colorlet{accent}{darkcolor}
+\\colorlet{emphasis}{SlateGrey}
+\\colorlet{body}{LightGrey}
+
+% Adjust margins
+\\addtolength{\\oddsidemargin}{-0.6in}
+\\addtolength{\\evensidemargin}{-0.5in}
+\\addtolength{\\textwidth}{1.19in}
+\\addtolength{\\topmargin}{-.7in}
+\\addtolength{\\textheight}{1.4in}
+
+\\urlstyle{same}
+
+\\raggedbottom
+\\raggedright
+\\setlength{\\tabcolsep}{0in}
+
+% Sections formatting
+\\titleformat{\\section}{
+  \\vspace{-4pt}\\scshape\\raggedright\\large\\bfseries
+}{}{0em}{}[\\color{black}\\titlerule \\vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\\newcommand{\\resumeItem}[1]{
+  \\item\\small{
+    {#1 \\vspace{-2pt}}
+  }
+}
+
+\\newcommand{\\resumeSubheading}[4]{
+  \\vspace{-2pt}\\item
+    \\begin{tabular*}{1.0\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}
+      \\textbf{\\large#1} & \\textbf{\\small #2} \\\\
+      \\textit{\\large#3} & \\textit{\\small #4} \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+
+\\newcommand{\\resumeProjectHeading}[2]{
+    \\item
+    \\begin{tabular*}{1.001\\textwidth}{l@{\\extracolsep{\\fill}}r}
+      \\small#1 & \\textbf{\\small #2}\\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+
+\\newcommand{\\resumeSubItem}[1]{\\resumeItem{#1}\\vspace{-4pt}}
+
+\\renewcommand\\labelitemi{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
+\\renewcommand\\labelitemii{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
+
+\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.0in, label={}]}
+\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
+\\newcommand{\\resumeItemListStart}{\\begin{itemize}}
+\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{-5pt}}
+
+\\newcommand\\sbullet[1][.5]{\\mathbin{\\vcenter{\\hbox{\\scalebox{#1}{$\\bullet$}}}}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\\begin{document}
+
+%----------HEADING----------
+\\begin{center}
+    {\\Huge \\scshape ${name}} \\\\ \\vspace{1pt}
+    ${location} \\\\ \\vspace{1pt}
+    \\small 
+    \\href{tel:${phone}}{\\raisebox{-0.01\\height}{\\faPhone}\\ \\underline{${phone}}} ~
+    \\href{mailto:${email}}{\\raisebox{-0.2\\height}{\\faEnvelope}\\ \\underline{${email}}} ~
+    ${github ? `\\href{https://${github}}{\\raisebox{-0.2\\height}{\\faGithub}\\ \\underline{GitHub}}` : ''}
+    \\vspace{-8pt}
+\\end{center}
+
+%-----------EDUCATION-----------
+\\section{EDUCATION}
+  \\resumeSubHeadingListStart
+${educations.map(edu => `    \\resumeSubheading
+      {${escapeLatex(edu.institution || 'University')}}{${escapeLatex(edu.duration || '')}}
+      {${escapeLatex(edu.degree || 'Degree')}${edu.gpa ? ` \\textbf{CGPA}: \\textbf{${escapeLatex(edu.gpa)}}` : ''}}{${escapeLatex(edu.location || '')}}`).join('\n')}
+  \\resumeSubHeadingListEnd
+
+% -----------TECHNICAL SKILLS-----------
+\\section{TECHNICAL SKILLS}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+     \\textbf{\\normalsize{Languages:}} \\normalsize{${skillsStr}} \\\\
+     \\textbf{\\normalsize{Soft Skills:}} \\normalsize{Leadership, Problem Solving, Time Management, Project Management, Adaptability}
+    }}
+ \\end{itemize}
+ \\vspace{-15pt}
+
+%-----------PROJECTS-----------
+\\section{PROJECTS}
+    \\vspace{-5pt}
+    \\resumeSubHeadingListStart
+${projects.map(proj => `       \\resumeProjectHeading
+          {\\textbf{\\large{\\underline{${escapeLatex(proj.name)}}}}${proj.tech ? ` $|$ \\large{\\underline{${escapeLatex(proj.tech)}}}` : ''}}{${escapeLatex(proj.duration || '')}}
+          \\resumeItemListStart
+${(proj.points || ['Developed and deployed full-stack platform features.']).map(pt => `            \\resumeItem{\\normalsize ${escapeLatex(pt)}}`).join('\n')}
+          \\resumeItemListEnd
+          \\vspace{-13pt}`).join('\n')}
+    \\resumeSubHeadingListEnd
+\\vspace{-12pt}
+
+%-----------EXPERIENCE-----------
+${experiences.length > 0 ? `\\section{EXPERIENCE}
+  \\resumeSubHeadingListStart
+${experiences.map(exp => `    \\resumeSubheading
+      {${escapeLatex(exp.company || 'Company')}}{${escapeLatex(exp.duration || '')}}
+      {${escapeLatex(exp.role || 'Role')}}{${escapeLatex(exp.location || '')}}
+      \\resumeItemListStart
+${(exp.points || ['Delivered core production features.']).map(pt => `        \\resumeItem{\\normalsize ${escapeLatex(pt)}}`).join('\n')}
+      \\resumeItemListEnd`).join('\n')}
+  \\resumeSubHeadingListEnd
+\\vspace{-12pt}` : ''}
+
+%-----------CERTIFICATIONS-----------
+\\section{CERTIFICATIONS}
+$\\sbullet[.75] \\hspace{0.1cm}$ {HTML \\& CSS: Basic to Beautiful -- Udemy} \\hspace{1cm}
+$\\sbullet[.75] \\hspace{0.1cm}$ {Web Development Fundamentals -- IBM} \\hspace{1cm}
+$\\sbullet[.75] \\hspace{0.2cm}$ {Complete Web Development Bootcamp -- Udemy}
+
+\\end{document}
+`
+  }
+
   // 1. JAKE'S RESUME FORMAT
   if (presetKey === 'jakes') {
     return `%-------------------------

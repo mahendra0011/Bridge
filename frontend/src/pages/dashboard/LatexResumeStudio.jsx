@@ -9,7 +9,7 @@ import {
   Maximize2, Minimize2, ChevronRight, Eye, Check, X,
   AlignLeft, Type, Hash, ShieldCheck, Upload, User,
   Briefcase, GraduationCap, Award, RefreshCcw, FileUp, UserCheck,
-  Loader2, Linkedin, Github
+  Loader2, Linkedin, Github, Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from '@/lib/axios'
@@ -409,7 +409,7 @@ Mentored 8 undergraduate researchers resulting in 3 peer-reviewed conference pub
 \\usepackage[empty]{fullpage}
 \\usepackage{titlesec}
 \\usepackage{marvosym}
-\\usepackage[usenames,dvipsnames]{color}
+\\usepackage[usenames,dvipsnames]{xcolor}
 \\usepackage{verbatim}
 \\usepackage{enumitem}
 \\usepackage[hidelinks]{hyperref}
@@ -421,12 +421,6 @@ Mentored 8 undergraduate researchers resulting in 3 peer-reviewed conference pub
 \\setlength{\\multicolsep}{-3.0pt}
 \\setlength{\\columnsep}{-1pt}
 \\input{glyphtounicode}
-
-\\RequirePackage{tikz}
-\\RequirePackage{xcolor}
-\\RequirePackage{fontawesome}
-\\usepackage{tikz}
-\\usetikzlibrary{svg.path}
 
 \\definecolor{cvblue}{HTML}{0E5484}
 \\definecolor{black}{HTML}{130810}
@@ -512,46 +506,41 @@ Mentored 8 undergraduate researchers resulting in 3 peer-reviewed conference pub
 
 \\newcommand\\sbullet[1][.5]{\\mathbin{\\vcenter{\\hbox{\\scalebox{#1}{$\\bullet$}}}}}
 
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \\begin{document}
 
 %----------HEADING----------
 \\begin{center}
     {\\Huge \\scshape Mahendra Prajapati} \\\\ \\vspace{1pt}
-    Jabalpur,M.P. \\\\ \\vspace{1pt}
-    \\small \\href{tel:+917724822660}{ \\raisebox{-0.01\\height}\\faPhone\\ \\underline{+917724822660} ~} \\href{mailto:mahendrapra0077@gmail.com}{\\raisebox{-0.2\\height}\\faEnvelope\\  \\underline{mahendrapra0077@gmail.com}} ~
-    \\href{https://github.com/mahendra0011}{\\raisebox{-0.2\\height}\\faGithub\\ \\underline{GitHub}}
+    Jabalpur, M.P. \\\\ \\vspace{1pt}
+    \\small 
+    \\href{tel:+917724822660}{\\raisebox{-0.01\\height}{\\faPhone}\\ \\underline{+917724822660}} ~
+    \\href{mailto:mahendrapra0077@gmail.com}{\\raisebox{-0.2\\height}{\\faEnvelope}\\ \\underline{mahendrapra0077@gmail.com}} ~
+    \\href{https://github.com/mahendra0011}{\\raisebox{-0.2\\height}{\\faGithub}\\ \\underline{GitHub}}
     \\vspace{-8pt}
 \\end{center}
 
-%-----------PROFILE SUMMARY-----------
-\\section{PROFILE SUMMARY}
-\\vspace{2pt}
-\\begin{flushleft}
-\\small
-Motivated and detail-oriented Electronics and Communication Engineering undergraduate with a strong foundation in Html, Css, JavaScript, NodeJS, ExpressJS, MongoDB and C++. Passionate about building efficient and scalable applications. Seeking opportunities to apply technical skills and contribute to innovative solutions.
-\\end{flushleft}
-
+%-----------EDUCATION-----------
 \\section{EDUCATION}
   \\resumeSubHeadingListStart
     \\resumeSubheading
-      {Shri Ram Institute of Technology Jabalpur }{2023 -- 2027}
-      {Bachelor of Technology – Electronics \\& Communication Engineering  \\textbf{CGPA}- \\textbf{7.1/10}}{Jabalpur (M.P.)}
-  \\resumeSubHeadingListEnd
- 
-  \\resumeSubHeadingListStart
+      {Shri Ram Institute of Technology Jabalpur}{2023 -- 2027}
+      {Bachelor of Technology -- Electronics \\& Communication Engineering \\textbf{CGPA}: \\textbf{7.1/10}}{Jabalpur (M.P.)}
     \\resumeSubheading
-      {Saraswati Shiksha Mandir H. secondary School Jabalpur }{2020-2025}
-      {MP Board -Class XII - \\textbf{61\\%} - Class X -  \\textbf{81\\%}}{Jabalpur (M.P.)}
+      {Saraswati Shiksha Mandir H. Secondary School Jabalpur}{2020 -- 2025}
+      {MP Board -- Class XII: \\textbf{61\\%} $|$ Class X: \\textbf{81\\%}}{Jabalpur (M.P.)}
   \\resumeSubHeadingListEnd
 
-% -----------PROGRAMMING SKILLS-----------
+% -----------TECHNICAL SKILLS-----------
 \\section{TECHNICAL SKILLS}
  \\begin{itemize}[leftmargin=0.15in, label={}]
     \\small{\\item{
-     \\textbf{\\normalsize{Languages:}}{ \\normalsize{ C++, HTML5, CSS3, TailwindCSS, JavaScript,SQL }} \\\\
-     \\textbf{\\normalsize{Developer Tools:}}{ \\normalsize{,Excel,VS Code,  Git, Postman}} \\\\
-     \\textbf{\\normalsize{Technologies/Frameworks:}}{\\normalsize{ GitHub,ReactJS, Redux, , NodeJS, ExpressJS, MongoDB,Firebase,ReactBits, MaterialUI,ShadCN}} \\\\
-     \\textbf{\\normalsize{Soft Skills:}}{\\normalsize{Leadership,Problem Solving,Time Management,Project Management,Adaptability,}} \\\\
+     \\textbf{\\normalsize{Languages:}} \\normalsize{C++, HTML5, CSS3, TailwindCSS, JavaScript, SQL} \\\\
+     \\textbf{\\normalsize{Developer Tools:}} \\normalsize{Excel, VS Code, Git, Postman} \\\\
+     \\textbf{\\normalsize{Technologies/Frameworks:}} \\normalsize{GitHub, ReactJS, Redux, Node.js, Express.js, MongoDB, Firebase, ReactBits, MaterialUI, ShadCN} \\\\
+     \\textbf{\\normalsize{Soft Skills:}} \\normalsize{Leadership, Problem Solving, Time Management, Project Management, Adaptability}
     }}
  \\end{itemize}
  \\vspace{-15pt}
@@ -561,50 +550,235 @@ Motivated and detail-oriented Electronics and Communication Engineering undergra
     \\vspace{-5pt}
     \\resumeSubHeadingListStart
        \\resumeProjectHeading
-          {\\href{https://medicore-main-1.onrender.com}{\\textbf{\\large{\\underline{MediCore}}} \\href{https://medicore-main-1.onrender.com}{\\raisebox{-0.1\\height}\\faExternalLink }} $|$ \\large{\\underline{ReactJS, Node.js, Express.js, MongoDB ,ReactBits,ShadCN,Cloudnary}}}{April 2026}
+          {\\href{https://medicore-main-1.onrender.com}{\\textbf{\\large{\\underline{MediCore}}} \\raisebox{-0.1\\height}{\\faExternalLink*}} $|$ \\large{\\underline{ReactJS, Node.js, Express.js, MongoDB, ReactBits, ShadCN, Cloudinary}}}{April 2026}
           \\resumeItemListStart
-            \\resumeItem{\\normalsize{Developed a production-ready full-stack Hospital Management System with separate Admin, Doctor, and Patient portals, JWT authentication with Security, role-based authorization, email OTP verification }}
-            \\resumeItem{\\normalsize{Engineered complete healthcare workflows including appointment booking, patient records, prescriptions, lab reports, discharge summaries with email delivery , emergency case handling, lab service booking along with medical file upload support., billing, payment tracking, notifications, and doctor approval systems. }}
-           \\resumeItem{\\normalsize{Built advanced admin functionalities such as user management, doctor verification, appointment monitoring, billing control, Excel import/export for patients/doctors/billing records, analytics dashboards, blocked-account management, and configurable platform settings. }}
+            \\resumeItem{\\normalsize Developed a production-ready full-stack Hospital Management System with separate Admin, Doctor, and Patient portals, JWT authentication with security, role-based authorization, and email OTP verification.}
+            \\resumeItem{\\normalsize Engineered complete healthcare workflows including appointment booking, patient records, prescriptions, lab reports, discharge summaries with email delivery, emergency case handling, medical file uploads, billing, and doctor approval systems.}
+            \\resumeItem{\\normalsize Built advanced admin functionalities such as user management, doctor verification, appointment monitoring, billing control, Excel import/export for patients/doctors/billing records, analytics dashboards, and configurable platform settings.}
           \\resumeItemListEnd
           \\vspace{-13pt}
          
       \\resumeProjectHeading
-          {\\href{https://enento.onrender.com}{\\textbf{\\large{\\underline{EventO}}} \\href{https://enento.onrender.com}{\\raisebox{-0.1\\height}\\faExternalLink }} $|$ \\large{\\underline{ ReactJS, Node.js, Express.js, MongoDB ,ReactBits,Bravo}}}{May 2026}
+          {\\href{https://enento.onrender.com}{\\textbf{\\large{\\underline{EventO}}} \\raisebox{-0.1\\height}{\\faExternalLink*}} $|$ \\large{\\underline{ReactJS, Node.js, Express.js, MongoDB, ReactBits, Brevo}}}{May 2026}
           \\resumeItemListStart
-            \\resumeItem{\\normalsize Developed a full-stack event booking platform with secure JWT authentication, bcrypt password hashing, email OTP verification, password reset workflows, public event discovery, category filtering, featured/trending events, wishlists, and QR-based e-ticket generation. }
-           \\resumeItem{\\normalsize{Engineered separate User, Host, and Admin dashboards featuring event creation and management, attendee communication, community chat, booking workflows, notifications, reviews, support tickets, refunds, disputes, fraud monitoring, analytics, and role-based access control. }}
-           \\resumeItem{\\normalsize{ Implemented scalable booking and platform management systems including OTP-based ticket confirmation, payment tracking, host broadcasts, CSV report exports for revenue/support/fraud reports specifically ,}}
+            \\resumeItem{\\normalsize Developed a full-stack event booking platform with secure JWT authentication, bcrypt password hashing, email OTP verification, password reset workflows, public event discovery, category filtering, featured events, wishlists, and QR-based e-ticket generation.}
+            \\resumeItem{\\normalsize Engineered separate User, Host, and Admin dashboards featuring event creation and management, attendee communication, community chat, booking workflows, notifications, reviews, support tickets, refunds, disputes, fraud monitoring, and analytics.}
+            \\resumeItem{\\normalsize Implemented scalable booking and platform management systems including OTP-based ticket confirmation, payment tracking, host broadcasts, and CSV report exports for revenue/support/fraud audits.}
           \\resumeItemListEnd
           \\vspace{-13pt}
          
           \\resumeProjectHeading
-          {\\href{https://mindsupport-uqms.onrender.com/}{\\textbf{\\large{\\underline{MindSupport}}} \\href{https://mindsupport-uqms.onrender.com/}{\\raisebox{-0.1\\height}\\faExternalLink }} $|$ \\large{\\underline{ ReactJS,Redux,Node.js, ShadCN UI, Express.js, MongoDB }}}{September 2025}
+          {\\href{https://mindsupport-uqms.onrender.com/}{\\textbf{\\large{\\underline{MindSupport}}} \\raisebox{-0.1\\height}{\\faExternalLink*}} $|$ \\large{\\underline{ReactJS, Redux, Node.js, ShadCN UI, Express.js, MongoDB}}}{September 2025}
           \\resumeItemListStart
-            \\resumeItem{\\normalsize{ Developed a full-stack mental wellness and counselling platform with separate User, Counsellor, and Admin dashboards featuring JWT authentication, OTP verification, counsellor approval workflows, role-based authorization, anonymous counselling, emergency support, and secure session management. }}
-           \\resumeItem{\\normalsize{Engineered advanced mental health features including counsellor marketplace, Google Meet session booking, real-time chat, wellness and mood tracking, PHQ-9/GAD-7 assessments, journals, payments, reviews, notifications, analytics, and resource management }}
+            \\resumeItem{\\normalsize Developed a full-stack mental wellness and counselling platform with separate User, Counsellor, and Admin dashboards featuring JWT authentication, OTP verification, counsellor approval workflows, role-based authorization, anonymous counselling, and emergency support.}
+            \\resumeItem{\\normalsize Engineered advanced mental health features including counsellor marketplace, Google Meet session booking, real-time chat, wellness and mood tracking, PHQ-9/GAD-7 assessments, journals, payments, reviews, and resource management.}
           \\resumeItemListEnd
     \\resumeSubHeadingListEnd
 \\vspace{-12pt}
 
+%-----------EXPERIENCE-----------
+% \\section{EXPERIENCE}
+%   \\resumeSubHeadingListStart
+%     \\resumeSubheading
+%       {Tech Company / Startup Name}{May 2025 -- Aug 2025}
+%       {Full Stack Software Engineer Intern}{Bangalore, India}
+%       \\resumeItemListStart
+%         \\resumeItem{Architected scalable cloud microservices reducing query latency by 35\\% across 10M daily requests.}
+%         \\resumeItem{Spearheaded automated CI/CD deployment pipelines on AWS using Docker containers and GitHub Actions.}
+%       \\resumeItemListEnd
+%   \\resumeSubHeadingListEnd
+% \\vspace{-12pt}
+
+%-----------COURSEWORK / RELEVANT SKILLS-----------
+% \\section{COURSEWORK / RELEVANT SUBJECTS}
+%   \\begin{multicols}{4}
+%     \\begin{itemize}[itemsep=-2pt, parsep=3pt]
+%       \\item Data Structures \\& Algorithms
+%       \\item Operating Systems
+%       \\item Database Management (DBMS)
+%       \\item Computer Networks
+%       \\item Object-Oriented Programming
+%       \\item Web Development
+%       \\item Cloud Computing \\& DevOps
+%       \\item Artificial Intelligence
+%     \\end{itemize}
+%   \\end{multicols}
+% \\vspace{-10pt}
+
+%-----------ACHIEVEMENTS-----------
 \\section{ACHIEVEMENTS}
     \\resumeItemListStart
-        \\resumeItem{\\normalsize{Led a team as \\textbf{Team Leader} in \\textbf{Smart India Hackathon (Internal Round)}, successfully qualifying among \\textbf{100+ competing teams}. }}
-        \\resumeItem{\\normalsize{Presented an innovative project \\textbf{“Fuel Theft Detection System”} at \\textbf{SRIT Project Expo}, demonstrating real-world problem-solving }}
-        \\resumeItem{\\normalsize{Achieved 400+ contributions on GitHub by consistently building, maintaining, and improving projects }}
-        \\resumeItem{\\normalsize{Solved 100+ problems in C++ on platforms like CodeHelp and other competitive coding sites }}
+        \\resumeItem{\\normalsize Led a team as \\textbf{Team Leader} in \\textbf{Smart India Hackathon (Internal Round)}, successfully qualifying among \\textbf{100+ competing teams}.}
+        \\resumeItem{\\normalsize Presented an innovative project \\textbf{“Fuel Theft Detection System”} at \\textbf{SRIT Project Expo}, demonstrating real-world problem-solving.}
+        \\resumeItem{\\normalsize Achieved 400+ contributions on GitHub by consistently building, maintaining, and improving open-source and full-stack projects.}
+        \\resumeItem{\\normalsize Solved 100+ problems in C++ on platforms like CodeHelp and other competitive coding sites.}
     \\resumeItemListEnd
 \\vspace{-11pt}
 
+%-----------EXTRACURRICULAR & LEADERSHIP-----------
+% \\section{EXTRACURRICULAR \\& LEADERSHIP}
+%   \\resumeSubHeadingListStart
+%     \\resumeSubheading
+%       {College Tech Club / Society}{2024 -- 2025}
+%       {Lead Coordinator / Organizer}{Jabalpur, M.P.}
+%       \\resumeItemListStart
+%         \\resumeItem{Organized national-level hackathons and technical symposiums with 300+ participant registrations.}
+%         \\resumeItem{Conducted hands-on mentorship workshops in C++, Web Development, and Git for junior students.}
+%       \\resumeItemListEnd
+%   \\resumeSubHeadingListEnd
+% \\vspace{-11pt}
+
+%-----------CERTIFICATIONS-----------
 \\section{CERTIFICATIONS}
-$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://udemy.com}{Html css basic to beautiful} - Udemy}  \\hspace{1cm}
-$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://ibm.com}{Web Development Basic - IBM}} \\hspace{1cm}
-$\\sbullet[.75] \\hspace{0.2cm}$ {\\href{https://udemy.com} {Complete web development - Udemy}}
+$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://udemy.com}{HTML \\& CSS: Basic to Beautiful} -- Udemy} \\hspace{1cm}
+$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://ibm.com}{Web Development Fundamentals} -- IBM} \\hspace{1cm}
+$\\sbullet[.75] \\hspace{0.2cm}$ {\\href{https://udemy.com}{Complete Web Development Bootcamp} -- Udemy}
 
 \\end{document}
 `
   }
 }
+
+// ── Quick-Insert Section Snippets for Overleaf-style Studio ─────────────────
+export const SECTION_SNIPPETS = [
+  {
+    label: '💼 Work Experience / Internship',
+    code: `
+%-----------EXPERIENCE-----------
+\\section{EXPERIENCE}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading
+      {Company Name}{Month Year -- Month Year}
+      {Role / Job Title}{City, State / Remote}
+      \\resumeItemListStart
+        \\resumeItem{Spearheaded development of scalable web architecture and reduced response latency by 35\\%.}
+        \\resumeItem{Collaborated with cross-functional product and engineering teams to deploy microservices.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+\\vspace{-12pt}
+`
+  },
+  {
+    label: '🚀 Project Entry',
+    code: `
+       \\resumeProjectHeading
+          {\\href{https://example.com}{\\textbf{\\large{\\underline{Project Name}}} \\raisebox{-0.1\\height}{\\faExternalLink*}} $|$ \\large{\\underline{ReactJS, Node.js, Express.js, MongoDB}}}{Month Year}
+          \\resumeItemListStart
+            \\resumeItem{Designed and implemented full-stack platform features with secure JWT authentication and role-based access.}
+            \\resumeItem{Built real-time interactive user dashboards and integrated cloud storage workflows.}
+          \\resumeItemListEnd
+          \\vspace{-13pt}
+`
+  },
+  {
+    label: '🎓 Education Entry',
+    code: `
+    \\resumeSubheading
+      {University / College Name}{Year -- Year}
+      {Degree Name -- Major / Specialization \\textbf{CGPA}: \\textbf{8.5/10}}{City, State}
+`
+  },
+  {
+    label: '💻 Technical Skills Block',
+    code: `
+%-----------TECHNICAL SKILLS-----------
+\\section{TECHNICAL SKILLS}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+     \\textbf{\\normalsize{Languages:}} \\normalsize{C++, Python, Java, JavaScript, TypeScript, SQL} \\\\
+     \\textbf{\\normalsize{Developer Tools:}} \\normalsize{Git, VS Code, Docker, Postman, AWS, Linux} \\\\
+     \\textbf{\\normalsize{Technologies/Frameworks:}} \\normalsize{ReactJS, Next.js, Node.js, Express.js, MongoDB, TailwindCSS} \\\\
+     \\textbf{\\normalsize{Soft Skills:}} \\normalsize{Leadership, Problem Solving, Agile, Communication, Project Management}
+    }}
+ \\end{itemize}
+\\vspace{-15pt}
+`
+  },
+  {
+    label: '📚 Coursework (4-Column Grid)',
+    code: `
+%-----------COURSEWORK-----------
+\\section{COURSEWORK / RELEVANT SKILLS}
+  \\begin{multicols}{4}
+    \\begin{itemize}[itemsep=-2pt, parsep=3pt]
+      \\item Data Structures \\& Algorithms
+      \\item Operating Systems
+      \\item Database Management (DBMS)
+      \\item Computer Networks
+      \\item Object-Oriented Programming
+      \\item Web Development
+      \\item Cloud Computing \\& DevOps
+      \\item Artificial Intelligence
+    \\end{itemize}
+  \\end{multicols}
+\\vspace{-10pt}
+`
+  },
+  {
+    label: '🏆 Achievements & Hackathons',
+    code: `
+%-----------ACHIEVEMENTS-----------
+\\section{ACHIEVEMENTS}
+  \\resumeItemListStart
+    \\resumeItem{Won \\textbf{1st Place} in National Hackathon among \\textbf{250+ participating teams}.}
+    \\resumeItem{Solved \\textbf{300+ problems} on LeetCode / CodeChef across dynamic programming, graphs, and trees.}
+    \\resumeItem{Ranked in \\textbf{Top 2\\%} in global coding competitions with 10,000+ competitors.}
+  \\resumeItemListEnd
+\\vspace{-11pt}
+`
+  },
+  {
+    label: '🤝 Extracurricular & Leadership',
+    code: `
+%-----------EXTRACURRICULAR-----------
+\\section{EXTRACURRICULAR \\& LEADERSHIP}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading
+      {Organization / Club Name}{Month Year -- Month Year}
+      {Lead Role / Coordinator}{Location}
+      \\resumeItemListStart
+        \\resumeItem{Led a team of 15+ student developers to organize national tech competitions and hackathons.}
+        \\resumeItem{Conducted hands-on technical workshops on full-stack web development for 200+ students.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+\\vspace{-11pt}
+`
+  },
+  {
+    label: '📜 Certifications Entry',
+    code: `
+%-----------CERTIFICATIONS-----------
+\\section{CERTIFICATIONS}
+$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://example.com}{Certificate Name} -- Issuer Organization} \\hspace{1cm}
+$\\sbullet[.75] \\hspace{0.1cm}$ {\\href{https://example.com}{Specialization Course} -- Platform}
+`
+  },
+  {
+    label: '🔬 Publications & Research',
+    code: `
+%-----------PUBLICATIONS-----------
+\\section{PUBLICATIONS \\& RESEARCH}
+  \\begin{itemize}[leftmargin=0.15in]
+    \\item \\textbf{Paper Title: Scalable Architecture in Distributed Cloud Systems} \\\\
+    \\textit{Published in International Conference on Computing Sciences, 2025} \\\\
+    Developed a novel load-balancing framework reducing microservice turnaround time by 31\\%.
+  \\end{itemize}
+\\vspace{-11pt}
+`
+  },
+  {
+    label: '✨ Custom Section Block',
+    code: `
+%-----------CUSTOM SECTION-----------
+\\section{CUSTOM SECTION TITLE}
+  \\begin{itemize}[leftmargin=0.15in]
+    \\item \\textbf{Key Highlight:} Description of your custom achievement, responsibility, or activity.
+    \\item \\textbf{Notable Milestone:} Another impactful bullet point detailing outcomes.
+  \\end{itemize}
+\\vspace{-11pt}
+`
+  }
+]
 
 export default function LatexResumeStudio() {
   const navigate = useNavigate()
@@ -635,6 +809,7 @@ export default function LatexResumeStudio() {
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
   const [wordWrap, setWordWrap] = useState(true)
   const [isFullscreenPdf, setIsFullscreenPdf] = useState(false)
+  const [isInsertMenuOpen, setIsInsertMenuOpen] = useState(false)
 
   // Auto-Fill & Profile Import State
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false)
@@ -1387,6 +1562,47 @@ JavaScript, TypeScript, Python, Go, C++, SQL, HTML, CSS, React, Next.js, Node.js
 
             {/* Quick Action Tools */}
             <div className="flex items-center gap-2">
+              {/* Insert Section Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsInsertMenuOpen(prev => !prev)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-[11px] font-bold transition-all shadow-xs"
+                  title="Insert LaTeX Section Template at Cursor"
+                >
+                  <Plus className="size-3 stroke-[2.5]" />
+                  <span>+ Add Section</span>
+                  <ChevronDown className="size-3 opacity-70" />
+                </button>
+
+                {isInsertMenuOpen && (
+                  <div 
+                    className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 z-50 text-xs animate-in fade-in duration-150"
+                  >
+                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1 flex items-center justify-between">
+                      <span>Choose Section to Insert</span>
+                      <span className="text-[9px] text-teal-400 font-normal">Click to insert</span>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-0.5 custom-scrollbar">
+                      {SECTION_SNIPPETS.map((snip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            insertSnippet(snip.code)
+                            setIsInsertMenuOpen(false)
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800 hover:text-teal-300 font-medium transition-colors flex items-center justify-between group"
+                        >
+                          <span className="truncate">{snip.label}</span>
+                          <Plus className="size-3 text-slate-500 group-hover:text-teal-400 shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* AI Beautify / Format */}
               <button
                 onClick={handleBeautifyLatex}

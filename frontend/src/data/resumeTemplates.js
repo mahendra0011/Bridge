@@ -8,6 +8,7 @@ export const RESUME_TEMPLATES = [
     "id": "mahendra-founder",
     "name": "Mahendra Prajapati resume founder of bridge",
     "shortName": "Mahendra Prajapati (Bridge Founder)",
+    "type": "latex",
     "category": "Engineering & Tech",
     "badges": [
       "Founder's Choice",

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { structuredToLatex } from '@/utils/structuredToLatex'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -920,6 +921,7 @@ ${(p.skills || []).join(', ')}
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
+          latex: structuredToLatex({ sections, visibleSections, sectionOrder, settings }),
           sections,
           visibleSections,
           sectionOrder,
