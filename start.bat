@@ -1,0 +1,3 @@
+@echo off
+echo Starting Bridge Project (Backend + Frontend)...
+npm run dev
