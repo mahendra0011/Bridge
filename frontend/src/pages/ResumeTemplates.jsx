@@ -127,12 +127,6 @@ export default function ResumeTemplates() {
   }, [allTemplates, fuseIndex, selectedCategory, searchQuery])
 
   const handleUseTemplate = (template) => {
-    if (template.type === 'latex') {
-      toast.success(`Selected "${template.name}"! Opening LaTeX Studio...`)
-      navigate(`/resume-templates/latex?template=${template.id}`)
-      return
-    }
-
     toast.success(`Selected "${template.shortName || template.name}"! Opening visual builder...`)
     const targetUrl = `/resume-builder?template=${template.id}`
     navigate(targetUrl)

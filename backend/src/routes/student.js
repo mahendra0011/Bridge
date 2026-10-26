@@ -1389,6 +1389,7 @@ const { parseLatexResume } = require('../utils/latexResumeParser')
 
 router.post('/resume-builder/compile-pdf', async (req, res) => {
   let { latex, sections, visibleSections, sectionOrder, settings, title } = req.body || {}
+  console.log(`[compile-pdf] received request. latex? ${Boolean(latex)} (len: ${latex ? latex.length : 0}), sections: ${sections?.length || 0}`)
 
   const hasStructuredData = Array.isArray(sections) && sections.length > 0
   if (!hasStructuredData && (!latex || typeof latex !== 'string')) {

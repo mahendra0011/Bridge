@@ -72,6 +72,7 @@ export default function ResumeBuilder() {
   const [compiling, setCompiling] = useState(false)
   const [compileError, setCompileError] = useState(null)
   const [exporting, setExporting] = useState(false)
+  const [previewTab, setPreviewTab] = useState('realtime') // 'realtime' | 'pdf'
 
   // Optional contact fields toggles
   const [showLinkedin, setShowLinkedin] = useState(false)
@@ -2854,7 +2855,7 @@ ${(p.skills || []).join(', ')}
             {/* Template Switcher Pill & Swatches */}
             <div className="flex items-center justify-between text-xs px-1">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-800 text-[11px] truncate max-w-[170px]">
+                <span className="font-bold text-slate-800 text-[11px] truncate max-w-[160px]">
                   {currentTemplate.name}
                 </span>
               </div>
@@ -2875,24 +2876,83 @@ ${(p.skills || []).join(', ')}
               </div>
             </div>
 
-            {/* Live Interactive Resume Canvas */}
-            <div className="relative group rounded-xl overflow-hidden shadow-xl border border-slate-200 bg-white">
-              <ResumeLivePreview
-                sections={sections}
-                sectionOrder={sectionOrder}
-                settings={settings}
-                className="transform scale-100 transition-transform origin-top"
-              />
-
-              {/* Hover overlay with zoom button */}
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+            {/* Preview Mode Selector Tabs */}
+            <div className="flex items-center justify-between gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setShowFullscreenPreview(true)}
-                  className="px-4 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold shadow-lg hover:bg-slate-100 flex items-center gap-1.5"
+                  type="button"
+                  onClick={() => setPreviewTab('realtime')}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    previewTab === 'realtime'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <ZoomIn className="size-3.5" /> Fullscreen View
+                  ⚡ Real-time Layout
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setPreviewTab('pdf')
+                    if (!pdfUrl) {
+                      await compileToPdf()
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+                    previewTab === 'pdf'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="size-3 text-red-500" />
+                  <span>Compiled PDF</span>
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={compileToPdf}
+                disabled={compiling}
+                title="Recompile exact LaTeX PDF"
+                className="px-2 py-1 rounded-lg text-[10.5px] font-bold text-primary hover:bg-white transition-all flex items-center gap-1 disabled:opacity-50"
+              >
+                <RefreshCw className={`size-3 ${compiling ? 'animate-spin' : ''}`} />
+                <span>Sync</span>
+              </button>
+            </div>
+
+            {/* Live Interactive Resume Canvas */}
+            <div className="relative group rounded-xl overflow-hidden shadow-xl border border-slate-200 bg-white">
+              {previewTab === 'pdf' ? (
+                pdfUrl ? (
+                  <iframe src={pdfUrl} title="Compiled Resume PDF" className="w-full h-[580px] border-0" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[480px] p-6 text-center text-slate-500 bg-slate-50">
+                    <Loader2 className="size-7 text-primary animate-spin mb-2" />
+                    <p className="text-xs font-bold text-slate-800">Compiling real Overleaf LaTeX PDF...</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Please wait a moment</p>
+                  </div>
+                )
+              ) : (
+                <ResumeLivePreview
+                  sections={sections}
+                  sectionOrder={sectionOrder}
+                  settings={settings}
+                  className="transform scale-100 transition-transform origin-top"
+                />
+              )}
+
+              {/* Hover overlay with zoom button */}
+              {previewTab === 'realtime' && (
+                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+                  <button
+                    onClick={() => setShowFullscreenPreview(true)}
+                    className="px-4 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold shadow-lg hover:bg-slate-100 flex items-center gap-1.5"
+                  >
+                    <ZoomIn className="size-3.5" /> Fullscreen View
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Template Change CTA */}

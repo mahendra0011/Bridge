@@ -358,46 +358,272 @@ export function ResumeLivePreview({ sections = [], sectionOrder = [], settings =
     )
   }
 
-  // --- Layout: Classic Centered (Original Corporate ATS / Ivy League Standard) ---
-  if (template.layoutStyle === 'classic-centered' || template.layoutStyle === 'ivy-rule') {
+  // --- Layout: Classic Centered (Original Overleaf / LaTeX Founder Standard) ---
+  if (template.layoutStyle === 'classic-centered' || template.layoutStyle === 'ivy-rule' || template.id === 'mahendra-founder' || template.type === 'latex') {
+    const TITLES_MAP = {
+      summary: 'Profile Summary', experience: 'Experience', internships: 'Internship', education: 'Education',
+      skills: 'Technical Skills', projects: 'Projects', certifications: 'Certifications',
+      achievements: 'Achievements', awards: 'Awards', publications: 'Publications', research: 'Research',
+      languages: 'Languages', interests: 'Interests', training: 'Training', volunteer: 'Volunteering',
+      leadership: 'Leadership', extracurricular: 'Extracurricular', hackathons: 'Hackathons',
+      openSource: 'Open Source', competitiveProgramming: 'Competitive Programming',
+      softSkills: 'Soft Skills', strengths: 'Strengths', declaration: 'Declaration', custom: 'Additional Information',
+    }
+
+    const projectsList = sections.filter(s => s.type === 'projects')
+    const internshipList = sections.filter(s => s.type === 'internships')
+
     return (
-      <div className={`w-full bg-white text-slate-800 shadow-lg rounded-xl overflow-hidden border border-slate-200 p-6 text-[11px] leading-relaxed min-h-[580px] font-serif ${className}`}>
-        {/* Centered Professional Header */}
+      <div className={`w-full bg-white text-slate-900 shadow-2xl rounded-sm p-6 sm:p-8 text-[11px] leading-normal font-serif select-text border border-slate-200/60 ${className}`}>
+        {/* LaTeX Centered Header */}
         {hasPersonal && (
-          <div className="text-center pb-3 mb-4 border-b-2" style={{ borderColor: primaryColor }}>
-            <h3 className="font-bold text-2xl text-slate-900 tracking-normal">{name}</h3>
+          <div className="text-center pb-2 mb-2">
+            <h2 className="font-serif font-bold text-2xl sm:text-3xl tracking-widest text-black uppercase" style={{ fontVariant: 'small-caps' }}>
+              {name || 'Your Name'}
+            </h2>
             {role && (
-              <p className="text-[11px] font-semibold tracking-widest uppercase mt-1 font-sans" style={{ color: primaryColor }}>
+              <p className="text-[12px] text-slate-800 font-serif mt-0.5">
                 {role}
               </p>
             )}
-            <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[9.5px] text-slate-600 mt-2 font-sans">
-              {email && <span>{email}</span>}
-              {email && (phone || location) && <span className="text-slate-300">|</span>}
-              {phone && <span>{phone}</span>}
-              {phone && location && <span className="text-slate-300">|</span>}
-              {location && <span>{location}</span>}
-              {personal.linkedin && (
-                <>
-                  <span className="text-slate-300">|</span>
-                  <span className="font-medium text-slate-700">{personal.linkedin.replace(/^https?:\/\//, '')}</span>
-                </>
+            {location && (
+              <p className="text-[11px] text-slate-700 font-serif mt-0.5">
+                {location}
+              </p>
+            )}
+            <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] sm:text-[10.5px] text-slate-900 font-serif mt-1.5">
+              {phone && (
+                <span className="inline-flex items-center gap-1">
+                  <Phone className="size-2.5 text-slate-800 shrink-0" />
+                  <span className="underline">{phone}</span>
+                </span>
               )}
+              {phone && email && <span className="text-slate-400">~</span>}
+              {email && (
+                <span className="inline-flex items-center gap-1">
+                  <Mail className="size-2.5 text-slate-800 shrink-0" />
+                  <span className="underline">{email}</span>
+                </span>
+              )}
+              {email && personal.linkedin && <span className="text-slate-400">~</span>}
+              {personal.linkedin && (
+                <span className="inline-flex items-center gap-1">
+                  <Linkedin className="size-2.5 text-slate-800 shrink-0" />
+                  <span className="underline">LinkedIn</span>
+                </span>
+              )}
+              {personal.linkedin && personal.github && <span className="text-slate-400">~</span>}
               {personal.github && (
+                <span className="inline-flex items-center gap-1">
+                  <Github className="size-2.5 text-slate-800 shrink-0" />
+                  <span className="underline">GitHub</span>
+                </span>
+              )}
+              {(personal.portfolio || personal.website) && (
                 <>
-                  <span className="text-slate-300">|</span>
-                  <span className="font-medium text-slate-700">{personal.github.replace(/^https?:\/\//, '')}</span>
+                  <span className="text-slate-400">~</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Globe className="size-2.5 text-slate-800 shrink-0" />
+                    <span className="underline">Portfolio</span>
+                  </span>
                 </>
               )}
             </div>
           </div>
         )}
 
-        {/* Main Content — Renders sections strictly in shifted dynamic order */}
-        <div className="space-y-4 font-sans">
+        {/* Dynamic Section Ordering matching LaTeX structuredToLatex */}
+        <div className="space-y-3 font-serif">
           {effectiveOrder
             .filter(t => t !== 'personal')
-            .map(t => renderSectionByType(t, 'classic-centered'))}
+            .map(type => {
+              const secs = sections.filter(s => s.type === type)
+              if (!secs.length) return null
+              const sectionTitle = secs[0].customSectionHeading || (type === 'custom' && secs[0].customSectionTitle) || TITLES_MAP[type] || type.toUpperCase()
+
+              return (
+                <div key={type} className="mb-2">
+                  {/* Section Title with Full-Width Titlerule */}
+                  <div className="mb-1.5">
+                    <h3 className="font-serif font-bold text-[12.5px] tracking-wider uppercase text-black">
+                      {sectionTitle}
+                    </h3>
+                    <div className="w-full h-[1px] bg-black mt-0.5" style={{ backgroundColor: primaryColor && primaryColor !== '#0E5484' ? primaryColor : '#000000' }} />
+                  </div>
+
+                  {/* Summary */}
+                  {type === 'summary' && summaryText && (
+                    <p className="text-[10px] sm:text-[10.5px] text-slate-900 leading-normal font-serif">
+                      {summaryText}
+                    </p>
+                  )}
+
+                  {/* Experience */}
+                  {type === 'experience' && (
+                    <div className="space-y-2">
+                      {experiences.map((exp, idx) => {
+                        const bulletLines = (exp.description || '').split('\n').map(l => l.replace(/^[\s\-*•·–—]+\s*/, '').trim()).filter(Boolean)
+                        if (exp.technologiesUsed) bulletLines.push(`Tech: ${exp.technologiesUsed}`)
+                        return (
+                          <div key={exp.id || idx} className="text-[10.5px]">
+                            <div className="flex justify-between items-baseline font-bold text-black">
+                              <span className="text-[11.5px]">{exp.company || 'Company'}</span>
+                              <span className="text-[10px]">
+                                {[exp.startDate, exp.current ? 'Present' : exp.endDate].filter(Boolean).join(' – ')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-baseline italic text-slate-800 text-[10.5px]">
+                              <span>{exp.role || 'Role'}{exp.employmentType ? ` (${exp.employmentType})` : ''}</span>
+                              <span className="italic text-[10px] text-slate-600">{exp.expLocation || exp.location || ''}</span>
+                            </div>
+                            {bulletLines.length > 0 && (
+                              <ul className="list-disc list-outside ml-4 mt-0.5 space-y-0.5 text-[10px] text-slate-900 leading-tight">
+                                {bulletLines.map((b, bIdx) => (
+                                  <li key={bIdx}>{b}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Internships */}
+                  {type === 'internships' && (
+                    <div className="space-y-2">
+                      {internshipList.map((intern, idx) => {
+                        const bulletLines = (intern.internDescription || intern.description || '').split('\n').map(l => l.replace(/^[\s\-*•·–—]+\s*/, '').trim()).filter(Boolean)
+                        if (intern.internTechnologies) bulletLines.push(`Tech: ${intern.internTechnologies}`)
+                        return (
+                          <div key={intern.id || idx} className="text-[10.5px]">
+                            <div className="flex justify-between items-baseline font-bold text-black">
+                              <span className="text-[11.5px]">{intern.internCompany || intern.company || 'Company'}</span>
+                              <span className="text-[10px]">
+                                {[intern.internStartDate || intern.startDate, intern.internCurrent ? 'Present' : (intern.internEndDate || intern.endDate)].filter(Boolean).join(' – ')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-baseline italic text-slate-800 text-[10.5px]">
+                              <span>{intern.internRole || intern.role || 'Intern'}</span>
+                              <span className="italic text-[10px] text-slate-600">{intern.internLocation || intern.location || ''}</span>
+                            </div>
+                            {bulletLines.length > 0 && (
+                              <ul className="list-disc list-outside ml-4 mt-0.5 space-y-0.5 text-[10px] text-slate-900 leading-tight">
+                                {bulletLines.map((b, bIdx) => (
+                                  <li key={bIdx}>{b}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Education */}
+                  {type === 'education' && (
+                    <div className="space-y-2">
+                      {educations.map((edu, idx) => (
+                        <div key={edu.id || idx} className="text-[10.5px]">
+                          <div className="flex justify-between items-baseline font-bold text-black">
+                            <span className="text-[11.5px]">{edu.institution || 'University / Institution'}</span>
+                            <span className="text-[10px]">
+                              {[edu.startYear, edu.endYear].filter(Boolean).join(' – ')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-baseline italic text-slate-800 text-[10.5px]">
+                            <span>
+                              {[edu.degree, edu.course, edu.specialization].filter(Boolean).join(' – ')}
+                              {edu.gpa && <span className="not-italic"> <strong>CGPA/Score: {edu.gpa}</strong></span>}
+                            </span>
+                            <span className="italic text-[10px] text-slate-600">{edu.eduLocation || edu.location || ''}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Projects */}
+                  {type === 'projects' && (
+                    <div className="space-y-2">
+                      {projectsList.map((proj, idx) => {
+                        const bulletLines = [
+                          ...(proj.projectDescription || '').split('\n'),
+                          ...(proj.projectKeyFeatures || '').split('\n'),
+                        ].map(l => l.replace(/^[\s\-*•·–—]+\s*/, '').trim()).filter(Boolean)
+                        return (
+                          <div key={proj.id || idx} className="text-[10.5px]">
+                            <div className="flex justify-between items-baseline">
+                              <div className="text-[11px] text-black">
+                                <span className="font-bold underline">{proj.projectName || 'Project'}</span>
+                                {proj.projectGithubLink && <ExternalLink className="inline size-2.5 ml-1 text-slate-700" />}
+                                {proj.projectTechnologies && (
+                                  <span className="text-slate-800"> | <span className="underline italic">{proj.projectTechnologies}</span></span>
+                                )}
+                              </div>
+                              <span className="font-bold text-[10px] text-black shrink-0">{proj.projectDuration || ''}</span>
+                            </div>
+                            {bulletLines.length > 0 && (
+                              <ul className="list-disc list-outside ml-4 mt-0.5 space-y-0.5 text-[10px] text-slate-900 leading-tight">
+                                {bulletLines.map((b, bIdx) => (
+                                  <li key={bIdx}>{b}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Technical Skills */}
+                  {type === 'skills' && (
+                    <div className="text-[10px] sm:text-[10.5px] leading-relaxed text-slate-900 space-y-0.5">
+                      {skillsSec.technical && (
+                        <p><strong className="font-bold">Languages:</strong> {skillsSec.technical}</p>
+                      )}
+                      {skillsSec.frameworks && (
+                        <p><strong className="font-bold">Technologies/Frameworks:</strong> {skillsSec.frameworks}</p>
+                      )}
+                      {(skillsSec.tools || skillsSec.developerTools) && (
+                        <p><strong className="font-bold">Developer Tools:</strong> {skillsSec.tools || skillsSec.developerTools}</p>
+                      )}
+                      {skillsSec.soft && (
+                        <p><strong className="font-bold">Soft Skills:</strong> {skillsSec.soft}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* All other sections */}
+                  {!['summary', 'experience', 'internships', 'education', 'projects', 'skills'].includes(type) && (
+                    <div className="space-y-1.5 text-[10.5px]">
+                      {secs.map((sec, idx) => {
+                        const display = getSectionDisplay(sec)
+                        const bulletLines = (display.desc || '').split('\n').map(l => l.replace(/^[\s\-*•·–—]+\s*/, '').trim()).filter(Boolean)
+                        return (
+                          <div key={sec.id || idx}>
+                            <div className="flex justify-between items-baseline font-bold text-black text-[11px]">
+                              <span>{display.title}</span>
+                              {display.date && <span className="text-[10px] font-normal text-slate-600">{display.date}</span>}
+                            </div>
+                            {display.subtitle && (
+                              <p className="italic text-[10px] text-slate-700">{display.subtitle}</p>
+                            )}
+                            {bulletLines.length > 0 && (
+                              <ul className="list-disc list-outside ml-4 mt-0.5 space-y-0.5 text-[10px] text-slate-900 leading-tight">
+                                {bulletLines.map((b, bIdx) => (
+                                  <li key={bIdx}>{b}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
         </div>
       </div>
     )

@@ -66,7 +66,11 @@ const BODY = new Set([
   'achievementDescription', 'scholarshipDescription', 'portfolioDescription'
 ])
 
-const SKIP = new Set(['id', 'type', 'customSectionHeading', 'customSectionTitle'])
+const SKIP = new Set([
+  'id', '_id', 'type', 'order', 'createdAt', 'updatedAt', '__v',
+  'customSectionHeading', 'customSectionTitle', 'customIcon', 'customLayout',
+  'repeatable', 'current', 'visible'
+])
 
 const render = {
   summary: (s) => `\\begin{flushleft}\n\\small\n${esc(s.summary)}\n\\end{flushleft}\n`,
@@ -92,11 +96,30 @@ const render = {
       .filter(([, v]) => v && String(v).trim()).map(([k, v]) => `\\textbf{\\normalsize{${k}:}} \\normalsize{${esc(v)}}`).join(' \\\\\n') +
     `\n}}\n\\end{itemize}\n`,
 
+  certifications: (s) => {
+    const title = [s.certName, s.certIssuer].filter(Boolean).join(' -- ')
+    const desc = lines(s.description)
+    return `\\resumeSubheading{${esc(title || 'Certification')}}{${esc(s.certDate || '')}}{${desc[0] ? esc(desc[0]) : ''}}{}\n` +
+      (desc.length > 1 ? bullets(desc.slice(1)) : '')
+  },
+
+  achievements: (s) => {
+    const title = esc(s.achievementTitle || s.title || '')
+    const desc = lines(s.achievementDescription || s.description)
+    return title ? `\\resumeSubheading{${title}}{${esc(s.achievementDate || s.date || '')}}{}{}\n` + bullets(desc) : bullets(desc)
+  },
+
+  awards: (s) => {
+    const title = [s.awardName, s.awardOrganization].filter(Boolean).join(' -- ')
+    const desc = lines(s.awardDescription || s.description)
+    return `\\resumeSubheading{${esc(title || 'Award')}}{${esc(s.awardDate || '')}}{}{}\n` + bullets(desc)
+  },
+
   declaration: (s) => `\\small ${esc(s.declarationText)}\n`,
 }
 
 const BULLET_TYPES = new Set([
-  'certifications', 'achievements', 'awards', 'languages', 'interests', 'strengths',
+  'languages', 'interests', 'strengths',
   'softSkills', 'hackathons', 'training', 'publications', 'memberships', 'scholarships'
 ])
 
@@ -115,7 +138,7 @@ function generic(s, type) {
   return `\\resumeSubheading{${esc(head)}}{}{${tail}}{}\n` + bullets(body)
 }
 
-const LIST_TYPES = new Set(['experience', 'education', 'projects', 'internships'])
+const LIST_TYPES = new Set(['experience', 'education', 'projects', 'internships', 'certifications', 'achievements', 'awards'])
 const HEAD = (t) => `\\section{${esc(t).toUpperCase()}}\n`
 
 export function structuredToLatex({ sections = [], visibleSections, sectionOrder, settings = {} }) {
