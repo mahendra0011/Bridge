@@ -123,7 +123,7 @@ export function DashboardLayout({ children, sections: customSections }) {
   const role = user?.role || 'student'
 
   useEffect(() => {
-    const notifApi = role === 'company' ? '/api/company/notifications' : '/api/notifications'
+    const notifApi = role === 'company' ? '/api/company/notifications' : '/api/student/notifications'
     api.get(notifApi).then((data) => {
       if (data?.notifications) setNotifications(data.notifications)
     }).catch(() => {})

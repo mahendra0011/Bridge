@@ -12,7 +12,7 @@ import {
   TrendingUp, ShieldCheck, Palette, RefreshCw, ZoomIn, Search, Layers, PenTool,
   Microscope
 } from 'lucide-react'
-import { api } from '@/lib/api'
+import { api, BASE_URL } from '@/lib/api'
 import Fuse from 'fuse.js'
 import { toast } from 'sonner'
 import { RESUME_TEMPLATES, getTemplateById } from '@/data/resumeTemplates'
@@ -620,7 +620,7 @@ export default function ResumeBuilder() {
         const formData = new FormData()
         formData.append('file', file)
 
-        const res = await fetch('/api/resume-templates/extract-file', {
+        const res = await fetch(`${BASE_URL}/api/resume-templates/extract-file`, {
           method: 'POST',
           body: formData,
         })
@@ -917,7 +917,7 @@ ${(p.skills || []).join(', ')}
     setCompiling(true)
     setCompileError(null)
     try {
-      const response = await fetch('/api/student/resume-builder/compile-pdf', {
+      const response = await fetch(`${BASE_URL}/api/student/resume-builder/compile-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -971,7 +971,7 @@ ${(p.skills || []).join(', ')}
   const handleDownloadDocx = async () => {
     setExporting(true)
     try {
-      const response = await fetch('/api/student/resume-builder/export-docx', {
+      const response = await fetch(`${BASE_URL}/api/student/resume-builder/export-docx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from '@/lib/axios'
+import { BASE_URL } from '@/lib/api'
 import { generateLatexCode } from '@/utils/latexGenerator'
 import { parseResumeRawText, classifyLinks } from '@/utils/smartResumeParser'
 
@@ -904,7 +905,7 @@ export default function LatexResumeStudio() {
         const formData = new FormData()
         formData.append('file', file)
 
-        const res = await fetch('/api/resume-templates/extract-file', {
+        const res = await fetch(`${BASE_URL}/api/resume-templates/extract-file`, {
           method: 'POST',
           body: formData,
         })
