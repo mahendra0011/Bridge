@@ -20,6 +20,7 @@ services:
       - ./backend/.env
     environment:
       MONGO_URI: mongodb://mongo:27017/bridge
+      MONGODB_URI: mongodb://mongo:27017/bridge
     ports:
       - '5000:5000'
     volumes:
